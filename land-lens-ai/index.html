@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ILRDVS · Intelligent Land Record Digitization &amp; Validation System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<style>
+  :root{
+    --blue-900:#1e3a8a; --blue-800:#1e40af; --blue-700:#1d4ed8; --blue-600:#2563eb; --blue-500:#3b82f6;
+    --blue-100:#dbeafe; --blue-50:#eff6ff;
+    --slate-900:#0f172a; --slate-800:#1e293b; --slate-700:#334155; --slate-600:#475569; --slate-500:#64748b;
+    --slate-400:#94a3b8; --slate-300:#cbd5e1; --slate-200:#e2e8f0; --slate-100:#f1f5f9; --slate-50:#f8fafc;
+    --emerald-600:#059669; --emerald-500:#10b981; --emerald-50:#ecfdf5; --emerald-200:#a7f3d0;
+    --amber-600:#d97706; --amber-500:#f59e0b; --amber-50:#fffbeb; --amber-200:#fde68a;
+    --red-600:#dc2626; --red-500:#ef4444; --red-50:#fef2f2; --red-200:#fecaca;
+    --orange-600:#ea580c; --orange-500:#f97316; --orange-50:#fff7ed; --orange-200:#fed7aa;
+    --radius:10px;
+    --shadow:0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--slate-50); color:var(--slate-900); -webkit-font-smoothing:antialiased;
+  }
+  #app{min-height:100vh;}
+  a{text-decoration:none;color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+  ::selection{background:var(--blue-100);}
+
+  /* ---------- utility ---------- */
+  .flex{display:flex;} .items-center{align-items:center;} .justify-between{justify-content:space-between;}
+  .gap-1{gap:4px;} .gap-2{gap:8px;} .gap-3{gap:12px;} .gap-4{gap:16px;}
+  .grid{display:grid;} .w-full{width:100%;}
+  .muted{color:var(--slate-500);} .small{font-size:12px;}
+  .icon{width:16px;height:16px;flex-shrink:0;}
+  .icon-lg{width:22px;height:22px;}
+  .icon-xl{width:32px;height:32px;}
+  .spin{animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+  .pulse{animation:pulse 1.4s ease-in-out infinite;}
+  @keyframes popin{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+
+  /* ---------- buttons ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:8px;
+    font-size:13.5px;font-weight:600;padding:10px 16px;border:1px solid transparent;transition:.15s;white-space:nowrap;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-primary{background:var(--blue-700);color:#fff;box-shadow:var(--shadow);}
+  .btn-primary:hover:not(:disabled){background:var(--blue-800);}
+  .btn-secondary{background:#fff;color:var(--slate-700);border-color:var(--slate-300);box-shadow:var(--shadow);}
+  .btn-secondary:hover:not(:disabled){background:var(--slate-50);}
+  .btn-danger-text{background:transparent;color:var(--red-600);}
+  .btn-danger-text:hover{background:var(--red-50);}
+  .btn-block{width:100%;}
+  .btn-sm{padding:6px 10px;font-size:12.5px;}
+
+  /* ---------- cards / tables / badges ---------- */
+  .card{background:#fff;border:1px solid var(--slate-200);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid;padding:4px 10px;font-size:11.5px;font-weight:600;}
+  .dot{width:6px;height:6px;border-radius:50%;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--slate-400);
+     background:var(--slate-50);padding:12px 18px;border-bottom:1px solid var(--slate-100);font-weight:600;}
+  td{padding:13px 18px;border-bottom:1px solid var(--slate-100);color:var(--slate-700);}
+  tr.rowlink{cursor:pointer;}
+  tr.rowlink:hover td{background:var(--slate-50);}
+  .table-wrap{overflow-x:auto;}
+
+  input[type=text],input[type=email],input[type=password],select.field{
+    width:100%;border:1px solid var(--slate-300);border-radius:8px;padding:9px 12px;font-size:13.5px;
+    outline:none;transition:.15s;background:#fff;color:var(--slate-800);
+  }
+  input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,select.field:focus{
+    border-color:var(--blue-500);box-shadow:0 0 0 3px rgba(59,130,246,.15);
+  }
+  label.field-label{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--slate-600);margin-bottom:6px;}
+
+  /* ---------- landing ---------- */
+  .landing-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--slate-200);}
+  .landing-hero{background:linear-gradient(180deg,var(--blue-50),#fff 70%);border-bottom:1px solid var(--slate-200);}
+  .brand-badge{width:36px;height:36px;border-radius:8px;background:var(--blue-700);color:#fff;display:flex;align-items:center;justify-content:center;}
+  .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--blue-100);background:var(--blue-50);color:var(--blue-700);
+    border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;}
+  .step-node{width:38px;height:38px;border-radius:50%;border:2px solid var(--blue-600);background:var(--blue-50);
+    color:var(--blue-700);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .step-line{width:2px;flex:1;background:var(--blue-100);margin:0 auto;min-height:26px;}
+  .feature-icon{width:40px;height:40px;border-radius:8px;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;}
+
+  /* ---------- login ---------- */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--slate-50);padding:24px;}
+  .login-card{width:100%;max-width:900px;background:#fff;border:1px solid var(--slate-200);border-radius:16px;overflow:hidden;
+    box-shadow:0 8px 30px rgba(15,23,42,.08);display:grid;grid-template-columns:1fr;}
+  .login-side{background:var(--blue-700);color:#fff;padding:36px;display:none;flex-direction:column;justify-content:space-between;}
+  .login-main{padding:34px;}
+  @media(min-width:900px){ .login-card{grid-template-columns:2fr 3fr;} .login-side{display:flex;} }
+  .demo-btn{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--slate-200);background:#fff;
+    border-radius:8px;padding:10px 12px;text-align:left;font-size:12px;box-shadow:var(--shadow);width:100%;}
+  .demo-btn:hover{border-color:var(--blue-300, #93c5fd);background:var(--blue-50);}
+
+  /* ---------- app shell ---------- */
+  .shell{display:flex;min-height:100vh;}
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:270px;background:#fff;border-right:1px solid var(--slate-200);
+    display:flex;flex-direction:column;z-index:50;transition:transform .2s ease;}
+  .sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--slate-200);}
+  .sidebar-nav{flex:1;overflow-y:auto;padding:16px 12px;}
+  .nav-section-label{padding:0 10px 6px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-400);}
+  .nav-item{display:flex;align-items:center;gap:10px;width:100%;border-radius:8px;padding:10px 12px;font-size:13.5px;
+    font-weight:500;color:var(--slate-600);background:transparent;border:none;text-align:left;margin-bottom:2px;}
+  .nav-item:hover{background:var(--slate-50);color:var(--slate-900);}
+  .nav-item.active{background:var(--blue-50);color:var(--blue-700);}
+  .nav-item.active .icon{color:var(--blue-700);}
+  .nav-item .icon{color:var(--slate-400);}
+  .sidebar-foot{padding:14px;border-top:1px solid var(--slate-200);}
+  .sidebar-overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);z-index:40;display:none;}
+  .main-col{flex:1;display:flex;flex-direction:column;min-height:100vh;margin-left:270px;}
+  .topbar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.97);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--slate-200);padding:13px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+  .hamburger{display:none;background:none;border:none;color:var(--slate-500);padding:4px;}
+  .main-content{flex:1;padding:22px;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--blue-700);color:#fff;font-size:11.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .search-box{position:relative;width:230px;}
+  .search-box input{padding-left:32px;}
+  .search-box .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--slate-400);}
+  @media(max-width:1024px){
+    .sidebar{transform:translateX(-100%);}
+    .sidebar.open{transform:translateX(0);}
+    .sidebar-overlay.open{display:block;}
+    .main-col{margin-left:0;}
+    .hamburger{display:inline-flex;}
+    .search-box{display:none;}
+  }
+
+  .section-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  .eyebrow{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--blue-600);margin:0 0 4px;}
+  .page-title{font-size:22px;font-weight:800;margin:0;color:var(--slate-900);}
+  .page-sub{font-size:13.5px;color:var(--slate-500);margin:4px 0 0;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:900px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:520px){.stat-grid{grid-template-columns:1fr;}}
+  .stat-card{padding:18px;}
+  .stat-icon{width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+  .stat-value{font-size:24px;font-weight:800;margin:14px 0 2px;color:var(--slate-900);}
+
+  .conf-bar-track{height:6px;width:100px;border-radius:999px;background:var(--slate-100);overflow:hidden;}
+  .conf-bar-fill{height:6px;border-radius:999px;transition:width .5s ease;}
+
+  .upload-drop{border:2px dashed var(--slate-300);border-radius:12px;padding:44px 20px;text-align:center;background:var(--slate-50);transition:.15s;}
+  .upload-drop.drag{border-color:var(--blue-500);background:var(--blue-50);}
+  .stage-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:20px;}
+  .stage-node{width:32px;height:32px;border-radius:50%;border:2px solid var(--slate-200);background:#fff;color:var(--slate-300);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin:0 auto 6px;transition:.2s;}
+  .stage-node.done{border-color:var(--emerald-500);background:var(--emerald-500);color:#fff;}
+  .stage-node.active{border-color:var(--blue-600);background:var(--blue-600);color:#fff;}
+
+  .toast-wrap{position:fixed;bottom:18px;right:18px;z-index:200;display:flex;flex-direction:column;gap:8px;}
+  .toast{display:flex;align-items:center;gap:8px;border:1px solid;border-radius:8px;padding:12px 16px;font-size:13px;font-weight:600;
+    box-shadow:0 10px 25px rgba(15,23,42,.12);animation:fadein .2s ease;background:#fff;max-width:320px;}
+  .toast-success{border-color:var(--emerald-200);background:var(--emerald-50);color:#065f46;}
+  .toast-warning{border-color:var(--amber-200);background:var(--amber-50);color:#92400e;}
+  .toast-error{border-color:var(--red-200);background:var(--red-50);color:#991b1b;}
+  .toast-info{border-color:var(--blue-100);background:var(--blue-50);color:#1e40af;}
+
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:150;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .modal-box{background:#fff;border-radius:14px;width:100%;max-width:460px;box-shadow:0 20px 50px rgba(15,23,42,.25);animation:popin .15s ease;}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--slate-100);}
+  .modal-body{padding:20px;}
+  .modal-foot{display:flex;justify-content:flex-end;gap:8px;padding:16px 20px;border-top:1px solid var(--slate-100);}
+
+  .checkline{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid var(--slate-200);border-radius:8px;padding:11px 14px;font-size:13px;color:var(--slate-600);}
+  .fade-in{animation:fadein .25s ease;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* =======================================================================
+   ICONS — minimal feather-style inline SVG library
+======================================================================= */
+const ICONS = {
+  landmark:'<polygon points="12 2 21 8 3 8"/><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/>',
+  dashboard:'<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>',
+  upload:'<path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/>',
+  scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="4" y1="12" x2="20" y2="12"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+  clipboardcheck:'<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><polyline points="9 14 11 16 15 11.5"/>',
+  filecheck:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9.5 15 11 16.5 15 12.5"/>',
+  files:'<path d="M15 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V7z"/><path d="M9 22h9a2 2 0 0 0 2-2V9l-6-7"/>',
+  alerttriangle:'<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  barchart:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+  users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  scroll:'<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>',
+  settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+  logout:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  chevronright:'<polyline points="9 18 15 12 9 6"/>',
+  chevrondown:'<polyline points="6 9 12 15 18 9"/>',
+  search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  bell:'<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  mappin:'<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  ruler:'<path d="M21.3 8.7L15.3 2.7a1 1 0 0 0-1.4 0L2.7 13.9a1 1 0 0 0 0 1.4l6 6a1 1 0 0 0 1.4 0L21.3 10.1a1 1 0 0 0 0-1.4z"/><line x1="7.5" y1="10.5" x2="10.5" y2="13.5"/><line x1="10.5" y1="7.5" x2="12" y2="9"/><line x1="14" y1="4" x2="15.5" y2="5.5"/>',
+  hash:'<line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/>',
+  layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  checkcircle:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+  xcircle:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+  x:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  trendingup:'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
+  menu:'<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  arrowright:'<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  arrowleft:'<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>',
+  refresh:'<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  copy:'<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  key:'<circle cx="8" cy="15" r="4"/><line x1="10.85" y1="12.15" x2="19" y2="4"/><line x1="15" y1="9" x2="18" y2="12"/><line x1="18" y1="6" x2="21" y2="9"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+  loader:'<line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>',
+};
+function icon(name, cls){
+  return '<svg class="icon '+(cls||'')+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+(ICONS[name]||'')+'</svg>';
+}
+
+/* Real-OCR engines: pdf.js (digital PDF text) + tesseract.js (image / scanned PDF OCR) */
+if(typeof pdfjsLib!=="undefined"){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.6.347/pdf.worker.min.js";
+}
+
+/* =======================================================================
+   MOCK DATA
+======================================================================= */
+const BRAND = { name:"ILRDVS", full:"Intelligent Land Record Digitization &amp; Validation System", dept:"Department of Revenue, Registration &amp; Survey" };
+
+const FIELD_LABELS = {
+  ownerName:"Owner Name", surveyNumber:"Survey Number", documentNumber:"Document Number",
+  village:"Village", mandal:"Mandal", district:"District", state:"State", landArea:"Land Area",
+  landType:"Land Type", registrationDate:"Registration Date"
+};
+const FIELD_ICONS = {
+  ownerName:"user", surveyNumber:"hash", documentNumber:"file", village:"mappin", mandal:"mappin",
+  district:"mappin", state:"mappin", landArea:"ruler", landType:"layers", registrationDate:"calendar"
+};
+/* Regex patterns used to pull labelled fields out of raw OCR / PDF text */
+const FIELD_PATTERNS = {
+  ownerName:/(?:owner'?s?\s*name|name\s*of\s*owner|owner)\s*[:\-]\s*([A-Za-z][A-Za-z\.\s]{2,60})/i,
+  surveyNumber:/survey\s*(?:no\.?|number|#)?\s*[:\-]?\s*([A-Za-z0-9\/\-\.]{1,20})/i,
+  documentNumber:/(?:document|doc|deed)\s*(?:no\.?|number|#)\s*[:\-]?\s*([A-Za-z0-9\/\-]{3,30})/i,
+  village:/village\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{1,40})/i,
+  mandal:/mandal\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{1,40})/i,
+  district:/district\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{1,40})/i,
+  state:/state\s*[:\-]?\s*([A-Za-z][A-Za-z\s]{1,40})/i,
+  landArea:/(?:land\s*)?area\s*[:\-]?\s*([0-9]+(?:\.[0-9]+)?\s*(?:acres?|hectares?|ha|sq\.?\s*ft\.?|square\s*feet|cents?|guntas?))/i,
+  landType:/(?:land\s*)?type\s*[:\-]?\s*(agricultural|residential|commercial|industrial|non[\s\-]?agricultural)/i,
+  registrationDate:/(?:registration\s*date|reg\.?\s*date|date\s*of\s*registration|dated?)\s*[:\-]?\s*([0-9]{1,4}[\/\-\.][0-9]{1,2}[\/\-\.][0-9]{1,4})/i
+};
+const DISTRICTS = ["Kakinada","East Godavari","West Godavari","Visakhapatnam","Krishna"];
+
+let RECORDS = [
+  { id:"LR-1001", ownerName:"K. Venkata Rao", surveyNumber:"142/2A", documentNumber:"DOC-2024-08821", village:"Peddapuram", mandal:"Kakinada Rural", district:"Kakinada", landArea:"2.45 acres", landType:"Agricultural", registrationDate:"2024-03-12", status:"Verified", confidence:98, uploadedDate:"2024-03-14" },
+  { id:"LR-1002", ownerName:"S. Lakshmi Devi", surveyNumber:"88/1B", documentNumber:"DOC-2023-09154", village:"Gollaprolu", mandal:"Gollaprolu", district:"Kakinada", landArea:"2.80 acres", landType:"Agricultural", registrationDate:"2023-11-08", status:"Verified", confidence:96, uploadedDate:"2023-11-10" },
+  { id:"LR-1003", ownerName:"M. Prasad Reddy", surveyNumber:"56/3", documentNumber:"DOC-2024-07733", village:"Tuni", mandal:"Tuni", district:"East Godavari", landArea:"1.20 acres", landType:"Residential", registrationDate:"2024-01-22", status:"Pending", confidence:82, uploadedDate:"2024-01-23" },
+  { id:"LR-1004", ownerName:"A. Suryanarayana", surveyNumber:"210/1", documentNumber:"DOC-2023-06621", village:"Rajahmundry Rural", mandal:"Rajahmundry Rural", district:"East Godavari", landArea:"4.00 acres", landType:"Agricultural", registrationDate:"2023-09-05", status:"Error", confidence:54, uploadedDate:"2023-09-06", issue:"Illegible document scan — key fields unreadable" },
+  { id:"LR-1005", ownerName:"P. Anitha", surveyNumber:"12/4C", documentNumber:"DOC-2024-05512", village:"Anakapalli", mandal:"Anakapalli", district:"Visakhapatnam", landArea:"0.85 acres", landType:"Residential", registrationDate:"2024-02-18", status:"Manual Verification", confidence:87, uploadedDate:"2024-02-19", issue:"Land area mismatch with registry database" },
+  { id:"LR-1006", ownerName:"D. Ramesh Babu", surveyNumber:"305/2", documentNumber:"DOC-2023-04409", village:"Bhimavaram", mandal:"Bhimavaram", district:"West Godavari", landArea:"3.60 acres", landType:"Agricultural", registrationDate:"2023-12-30", status:"Verified", confidence:95, uploadedDate:"2023-12-31" },
+  { id:"LR-1007", ownerName:"V. Sita Mahalakshmi", surveyNumber:"77/1", documentNumber:"DOC-2024-03302", village:"Eluru Rural", mandal:"Eluru Rural", district:"West Godavari", landArea:"1.95 acres", landType:"Agricultural", registrationDate:"2024-04-02", status:"Verified", confidence:97, uploadedDate:"2024-04-03" },
+  { id:"LR-1008", ownerName:"N. Krishna Murthy", surveyNumber:"88/1B", documentNumber:"DOC-2024-09155", village:"Gollaprolu", mandal:"Gollaprolu", district:"Kakinada", landArea:"2.80 acres", landType:"Agricultural", registrationDate:"2024-05-02", status:"Error", confidence:41, uploadedDate:"2024-05-03", issue:"Duplicate of LR-1002 — identical survey number & village", duplicateOf:"LR-1002" },
+  { id:"LR-1009", ownerName:"B. Chandrasekhar", surveyNumber:"19/5", documentNumber:"DOC-2023-02214", village:"Vijayawada Rural", mandal:"Vijayawada Rural", district:"Krishna", landArea:"2.10 acres", landType:"Commercial", registrationDate:"2023-08-14", status:"Pending", confidence:79, uploadedDate:"2023-08-15" },
+  { id:"LR-1010", ownerName:"G. Padmavathi", surveyNumber:"150/3A", documentNumber:"DOC-2023-01198", village:"Narasapuram", mandal:"Narasapuram", district:"West Godavari", landArea:"1.50 acres", landType:"Residential", registrationDate:"2023-07-01", status:"Verified", confidence:99, uploadedDate:"2023-07-02" }
+];
+RECORDS.forEach(function(r){ if(!r.state) r.state = "Andhra Pradesh"; });
+
+let USERS = [
+  { id:"U1", name:"Admin User", email:"admin@example.com", password:"admin123", role:"Admin", status:"Active", lastLogin:"2024-05-20 09:14" },
+  { id:"U2", name:"Land Officer", email:"officer@example.com", password:"officer123", role:"Land Officer", status:"Active", lastLogin:"2024-05-19 16:42" },
+  { id:"U3", name:"R. Naveen Kumar", email:"naveen.kumar@landrecords.gov.in", role:"Land Officer", status:"Active", lastLogin:"2024-05-18 11:02" },
+  { id:"U4", name:"T. Swathi", email:"swathi.t@landrecords.gov.in", role:"Verifier", status:"Inactive", lastLogin:"2024-04-30 08:20" },
+  { id:"U5", name:"C. Mahesh", email:"mahesh.c@landrecords.gov.in", role:"Verifier", status:"Active", lastLogin:"2024-05-21 08:55" }
+];
+
+let AUDIT = [
+  { id:"A1", timestamp:"2024-05-21 10:32", user:"Admin User", action:"Approved Record", details:"LR-1001 approved after validation (98% confidence)" },
+  { id:"A2", timestamp:"2024-05-20 09:50", user:"Land Officer", action:"Uploaded Document", details:"New land record document uploaded for OCR processing" },
+  { id:"A3", timestamp:"2024-05-19 17:10", user:"Admin User", action:"Flagged Duplicate", details:"LR-1008 flagged as duplicate of LR-1002" },
+  { id:"A4", timestamp:"2024-05-19 15:22", user:"Land Officer", action:"Manual Verification", details:"LR-1005 sent for manual verification (land area mismatch)" },
+  { id:"A5", timestamp:"2024-05-18 12:05", user:"Admin User", action:"User Added", details:"New user T. Swathi added with role Verifier" },
+  { id:"A6", timestamp:"2024-05-17 09:40", user:"Admin User", action:"Settings Updated", details:"Validation threshold changed to 85%" }
+];
+
+const SCENARIOS = {
+  A:{ key:"A", label:"Scenario 1 — Clean Match", fileName:"Land_Deed_Peddapuram_142.pdf",
+    description:"Document data matches the registry exactly.", dbRecordId:"LR-1001",
+    extracted:{ ownerName:"K. Venkata Rao", surveyNumber:"142/2A", documentNumber:"DOC-2024-08821", village:"Peddapuram", mandal:"Kakinada Rural", district:"Kakinada", state:"Andhra Pradesh", landArea:"2.45 acres", landType:"Agricultural", registrationDate:"2024-03-12" },
+    confidence:{ ownerName:99, surveyNumber:97, documentNumber:99, village:96, mandal:95, district:99, state:98, landArea:98, landType:100, registrationDate:97 } },
+  B:{ key:"B", label:"Scenario 2 — Land Area Mismatch", fileName:"Land_Deed_Gollaprolu_88.pdf",
+    description:"Extracted land area does not match the registry record.", dbRecordId:"LR-1002",
+    extracted:{ ownerName:"S. Lakshmi Devi", surveyNumber:"88/1B", documentNumber:"DOC-2023-09154", village:"Gollaprolu", mandal:"Gollaprolu", district:"Kakinada", state:"Andhra Pradesh", landArea:"3.10 acres", landType:"Agricultural", registrationDate:"2023-11-08" },
+    confidence:{ ownerName:95, surveyNumber:93, documentNumber:96, village:90, mandal:88, district:97, state:96, landArea:72, landType:99, registrationDate:94 } }
+};
+
+const NAV_SECTIONS = [
+  { label:"Overview", items:[ {key:"dashboard", label:"Dashboard", icon:"dashboard"} ] },
+  { label:"Digitization Workflow", items:[
+    {key:"upload", label:"Upload Land Record", icon:"upload"},
+    {key:"ocr", label:"OCR / Extracted Data", icon:"scan"},
+    {key:"validation", label:"Validation", icon:"clipboardcheck"},
+    {key:"validation-result", label:"Validation Result", icon:"filecheck"}
+  ]},
+  { label:"Records", items:[
+    {key:"records", label:"Land Records", icon:"files"},
+    {key:"errors", label:"Errors & Duplicates", icon:"alerttriangle"},
+    {key:"reports", label:"Reports", icon:"barchart"}
+  ]},
+  { label:"Administration", items:[
+    {key:"users", label:"Users", icon:"users", adminOnly:true},
+    {key:"audit", label:"Audit Logs", icon:"scroll"},
+    {key:"settings", label:"Settings", icon:"settings"}
+  ]}
+];
+const PAGE_TITLES = {
+  dashboard:"Dashboard", upload:"Upload Land Record", ocr:"OCR / Extracted Data", validation:"Validation",
+  "validation-result":"Validation Result", records:"Land Records", "record-details":"Record Details",
+  errors:"Errors & Duplicates", reports:"Reports", users:"Users", audit:"Audit Logs", settings:"Settings"
+};
+const STAGES = ["Uploading","OCR Processing","Extracting Fields","Validating","Completed"];
+
+/* =======================================================================
+   STATE
+======================================================================= */
+const S = {
+  auth:null, page:"landing", mobileOpen:false, userMenuOpen:false, toasts:[], modal:null,
+
+  scenarioKey:"A", uploadMode:"real",
+  ocrSource:null, demoScenario:null, realOcr:null,
+  fields:Object.assign({}, SCENARIOS.A.extracted),
+  validation:null, dupes:[], selectedRecordId:null,
+
+  upload:{ fileName:"", file:null, stageIdx:-1, progress:0, stageLabel:"", running:false, error:"", dragOver:false, timers:[] },
+
+  recordsFilter:{ q:"", status:"All", district:"All" },
+  editingRecord:false, recordDraft:null,
+  auditQuery:"",
+  userForm:{ name:"", email:"", role:"Land Officer" },
+  threshold:85,
+  notify:{ email:true, sms:false, weeklyReport:true },
+  pwForm:{ current:"", next:"", confirm:"" }
+};
+let CHARTS = {};
+
+/* =======================================================================
+   HELPERS
+======================================================================= */
+function esc(s){ return (s===undefined||s===null) ? "" : String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function confColor(v){
+  if(v>=90) return {text:"#047857", bg:"var(--emerald-500)", chipBg:"var(--emerald-50)", chipBorder:"var(--emerald-200)"};
+  if(v>=75) return {text:"#b45309", bg:"var(--amber-500)", chipBg:"var(--amber-50)", chipBorder:"var(--amber-200)"};
+  return {text:"#b91c1c", bg:"var(--red-500)", chipBg:"var(--red-50)", chipBorder:"var(--red-200)"};
+}
+function confChip(v){
+  const c = confColor(v);
+  return '<span class="badge" style="background:'+c.chipBg+';border-color:'+c.chipBorder+';color:'+c.text+'">'+v+'%</span>';
+}
+function confBar(v, showLabel){
+  const c = confColor(v);
+  return '<div class="flex items-center gap-2">'+
+    '<div class="conf-bar-track"><div class="conf-bar-fill" style="width:'+v+'%;background:'+c.bg+'"></div></div>'+
+    (showLabel!==false ? '<span class="small" style="font-weight:700;color:'+c.text+'">'+v+'%</span>' : '')+
+    '</div>';
+}
+const STATUS_STYLE = {
+  "Verified":{bg:"var(--emerald-50)", border:"var(--emerald-200)", text:"#047857", dot:"var(--emerald-500)"},
+  "Pending":{bg:"var(--amber-50)", border:"var(--amber-200)", text:"#b45309", dot:"var(--amber-500)"},
+  "Error":{bg:"var(--red-50)", border:"var(--red-200)", text:"#b91c1c", dot:"var(--red-500)"},
+  "Manual Verification":{bg:"var(--orange-50)", border:"var(--orange-200)", text:"#c2410c", dot:"var(--orange-500)"}
+};
+function statusBadge(status){
+  const s = STATUS_STYLE[status] || {bg:"var(--slate-100)",border:"var(--slate-200)",text:"var(--slate-600)",dot:"var(--slate-400)"};
+  return '<span class="badge" style="background:'+s.bg+';border-color:'+s.border+';color:'+s.text+'">'+
+    '<span class="dot" style="background:'+s.dot+'"></span>'+esc(status)+'</span>';
+}
+function showToast(message, tone){
+  const id = "t"+Math.random().toString(36).slice(2);
+  S.toasts.push({id:id, message:message, tone:tone||"success"});
+  render();
+  setTimeout(function(){ S.toasts = S.toasts.filter(function(t){return t.id!==id;}); render(); }, 3400);
+}
+function initials(name){ return name.split(" ").map(function(s){return s[0];}).slice(0,2).join(""); }
+function nextRecordId(){
+  const nums = RECORDS.map(function(r){ return parseInt(r.id.split("-")[1],10); });
+  return "LR-"+(Math.max.apply(null,nums)+1);
+}
+function logAudit(action, details){
+  AUDIT.unshift({ id:"A"+Math.random().toString(36).slice(2,7), timestamp:new Date().toISOString().slice(0,16).replace("T"," "),
+    user: S.auth ? S.auth.name : "System", action:action, details:details });
+}
+function clearUploadTimers(){ S.upload.timers.forEach(function(t){ clearTimeout(t); clearInterval(t); }); S.upload.timers=[]; }
+
+/* ---- unified accessors for whichever OCR source (real upload vs demo) is active ---- */
+function currentFileName(){
+  if(S.ocrSource==="real" && S.realOcr) return S.realOcr.fileName;
+  if(S.ocrSource==="demo" && S.demoScenario) return S.demoScenario.fileName;
+  return "";
+}
+function currentFieldConfidence(key){
+  if(S.ocrSource==="real" && S.realOcr) return S.realOcr.confidence[key] || 0;
+  if(S.ocrSource==="demo" && S.demoScenario) return S.demoScenario.confidence[key] || 0;
+  return 0;
+}
+function currentAvgConfidence(){
+  const keys = Object.keys(FIELD_LABELS);
+  const vals = keys.map(function(k){ return currentFieldConfidence(k); });
+  return Math.round(vals.reduce(function(a,b){return a+b;},0)/vals.length);
+}
+function currentEngineLabel(){
+  if(S.ocrSource==="real" && S.realOcr) return S.realOcr.engine;
+  if(S.ocrSource==="demo") return "Simulated (Demo Scenario)";
+  return "—";
+}
+
+/* =======================================================================
+   NAVIGATION
+======================================================================= */
+function goTo(page, recordId){
+  if(recordId) S.selectedRecordId = recordId;
+  S.mobileOpen = false;
+  S.userMenuOpen = false;
+  if(page!=="upload") { /* keep upload state as-is */ }
+  S.page = page;
+  render();
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+window.goTo = goTo;
+
+/* =======================================================================
+   RENDER: LANDING
+======================================================================= */
+function renderLanding(){
+  const steps = [
+    {icon:"upload", label:"Upload"}, {icon:"scan", label:"OCR"}, {icon:"file", label:"Extract"},
+    {icon:"clipboardcheck", label:"Validate"}, {icon:"alerttriangle", label:"Detect"}, {icon:"files", label:"Store"}
+  ];
+  const features = [
+    {icon:"scan", title:"OCR Field Extraction", body:"Automatically pulls owner, survey, and registration details from scanned deeds with per-field confidence scoring."},
+    {icon:"copy", title:"Duplicate Detection", body:"Cross-checks incoming records against the registry to surface duplicate survey numbers before they're filed."},
+    {icon:"clipboardcheck", title:"Rule-Based Validation", body:"Flags missing fields, owner mismatches, and land-area discrepancies for manual review."},
+    {icon:"scroll", title:"Full Audit Trail", body:"Every upload, approval, and edit is timestamped and attributable for compliance reporting."}
+  ];
+  return ''+
+  '<header class="landing-header"><div style="max-width:1200px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;">'+
+    '<div class="flex items-center gap-2">'+
+      '<div class="brand-badge">'+icon("landmark","icon-lg")+'</div>'+
+      '<div><p style="margin:0;font-weight:800;font-size:14px;">'+BRAND.name+'</p><p style="margin:0;font-size:10.5px;color:var(--slate-500);">'+BRAND.dept+'</p></div>'+
+    '</div>'+
+    '<button class="btn btn-primary" onclick="goTo(\'login\')">Access Portal</button>'+
+  '</div></header>'+
+
+  '<section class="landing-hero"><div style="max-width:1200px;margin:0 auto;padding:64px 24px;display:grid;grid-template-columns:1fr;gap:48px;">'+
+    '<div class="hero-grid" style="display:grid;grid-template-columns:1fr;gap:40px;">'+
+    '<div>'+
+      '<span class="pill">'+icon("shield")+' Government Land Records Initiative</span>'+
+      '<h1 style="font-size:38px;line-height:1.15;font-weight:800;margin:18px 0;color:var(--slate-900);">Digitize land records.<br/><span style="color:var(--blue-700);">Validate them automatically.</span></h1>'+
+      '<p style="font-size:15px;line-height:1.6;color:var(--slate-600);max-width:560px;">'+BRAND.full+' converts scanned land deeds into structured, verified digital records — extracting fields with OCR, cross-checking them against the registry, and routing mismatches for manual review before anything is filed.</p>'+
+      '<div class="flex gap-2" style="margin-top:26px;flex-wrap:wrap;">'+
+        '<button class="btn btn-primary" onclick="goTo(\'login\')">Login to Continue '+icon("arrowright")+'</button>'+
+        '<button class="btn btn-secondary" onclick="goTo(\'login\')">'+icon("upload")+' See the Upload Workflow</button>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px;padding-top:22px;border-top:1px solid var(--slate-200);max-width:420px;">'+
+        '<div><p style="font-size:22px;font-weight:800;margin:0;">12,480</p><p class="small muted" style="margin:0;">Records digitized</p></div>'+
+        '<div><p style="font-size:22px;font-weight:800;margin:0;">98.2%</p><p class="small muted" style="margin:0;">Validation accuracy</p></div>'+
+        '<div><p style="font-size:22px;font-weight:800;margin:0;">40+</p><p class="small muted" style="margin:0;">Districts onboarded</p></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="card" style="padding:24px;">'+
+      '<p class="small muted" style="text-transform:uppercase;letter-spacing:.05em;font-weight:700;margin:0 0 16px;">End-to-end pipeline</p>'+
+      steps.map(function(s,i){
+        return '<div class="flex gap-3">'+
+          '<div style="display:flex;flex-direction:column;align-items:center;">'+
+            '<div class="step-node">'+icon(s.icon)+'</div>'+
+            (i<steps.length-1 ? '<div class="step-line"></div>' : '')+
+          '</div>'+
+          '<div style="padding-top:8px;padding-bottom:'+(i<steps.length-1?'26px':'0')+';"><p style="margin:0;font-weight:700;font-size:13.5px;">'+s.label+'</p></div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+    '</div>'+
+  '</div></section>'+
+
+  '<section style="max-width:1200px;margin:0 auto;padding:60px 24px;">'+
+    '<p class="eyebrow">Capabilities</p>'+
+    '<h2 style="font-size:26px;font-weight:800;margin:0 0 34px;">Built for the volume and scrutiny of public records</h2>'+
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;">'+
+      features.map(function(f){
+        return '<div class="card" style="padding:20px;">'+
+          '<div class="feature-icon">'+icon(f.icon,"icon-lg")+'</div>'+
+          '<p style="font-weight:700;font-size:14px;margin:14px 0 6px;">'+f.title+'</p>'+
+          '<p class="small muted" style="line-height:1.55;margin:0;">'+f.body+'</p>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+  '</section>'+
+
+  '<section style="border-top:1px solid var(--slate-200);background:var(--slate-50);"><div style="max-width:900px;margin:0 auto;padding:52px 24px;text-align:center;">'+
+    '<h2 style="font-size:24px;font-weight:800;margin:0 0 8px;">Ready to review the digitization queue?</h2>'+
+    '<p class="muted" style="margin:0 0 22px;">Sign in with an administrator or land officer account to access the portal.</p>'+
+    '<button class="btn btn-primary" onclick="goTo(\'login\')">Go to Login '+icon("arrowright")+'</button>'+
+  '</div></section>'+
+
+  '<footer style="border-top:1px solid var(--slate-200);"><div style="max-width:1200px;margin:0 auto;padding:22px 24px;font-size:11.5px;color:var(--slate-400);">'+
+    '© 2024 '+BRAND.dept+'. This is a frontend prototype built with mock data for demonstration purposes only.'+
+  '</div></footer>'+
+  '<style>@media(min-width:960px){.hero-grid{grid-template-columns:1.1fr .9fr !important;align-items:center;}}</style>';
+}
+
+/* =======================================================================
+   RENDER: LOGIN
+======================================================================= */
+let LOGIN_ERROR = "";
+function renderLogin(){
+  return '<div class="login-wrap"><div class="login-card">'+
+    '<div class="login-side">'+
+      '<div>'+
+        '<div class="flex items-center gap-2"><div style="width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;">'+icon("landmark")+'</div><p style="font-weight:800;margin:0;">'+BRAND.name+'</p></div>'+
+        '<p style="font-size:17px;font-weight:700;line-height:1.4;margin:28px 0 10px;">Secure access for authorized land record officers.</p>'+
+        '<p style="font-size:13px;line-height:1.6;color:#dbeafe;margin:0;">All logins are recorded in the audit log. Use your issued credentials to access digitization, validation, and reporting tools.</p>'+
+      '</div>'+
+      '<div style="font-size:13px;color:#dbeafe;">'+
+        '<div class="flex items-center gap-2" style="margin-bottom:10px;">'+icon("shield")+' Role-based access control</div>'+
+        '<div class="flex items-center gap-2">'+icon("scroll")+' Full activity audit trail</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="login-main">'+
+      '<button onclick="goTo(\'landing\')" class="flex items-center gap-1 small muted" style="background:none;border:none;margin-bottom:18px;padding:0;">'+icon("arrowleft")+' Back to home</button>'+
+      '<h1 style="font-size:22px;font-weight:800;margin:0;">Sign in to your account</h1>'+
+      '<p class="small muted" style="margin:6px 0 22px;">Enter your credentials to access the ILRDVS portal.</p>'+
+      '<form onsubmit="submitLogin(event)">'+
+        '<label class="field-label">Email address</label>'+
+        '<input type="text" id="loginEmail" placeholder="you@example.com" style="margin-bottom:14px;" required/>'+
+        '<label class="field-label">Password</label>'+
+        '<input type="password" id="loginPassword" placeholder="••••••••" style="margin-bottom:14px;" required/>'+
+        (LOGIN_ERROR ? '<div class="flex items-center gap-2 small" style="border:1px solid var(--red-200);background:var(--red-50);color:#b91c1c;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-weight:600;">'+icon("info")+esc(LOGIN_ERROR)+'</div>' : '')+
+        '<button type="submit" class="btn btn-primary btn-block" style="padding:12px;">Sign In '+icon("arrowright")+'</button>'+
+      '</form>'+
+      '<div class="card" style="background:var(--slate-50);margin-top:22px;padding:16px;">'+
+        '<p class="small" style="text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--slate-500);margin:0 0 10px;">Demo credentials</p>'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+
+          '<button type="button" class="demo-btn" onclick="fillDemo(\'admin\')"><span><span style="display:block;font-weight:700;color:var(--slate-800);">Admin</span><span class="muted">admin@example.com</span></span>'+icon("user")+'</button>'+
+          '<button type="button" class="demo-btn" onclick="fillDemo(\'officer\')"><span><span style="display:block;font-weight:700;color:var(--slate-800);">Land Officer</span><span class="muted">officer@example.com</span></span>'+icon("user")+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div></div>';
+}
+function fillDemo(role){
+  document.getElementById("loginEmail").value = role==="admin" ? "admin@example.com" : "officer@example.com";
+  document.getElementById("loginPassword").value = role==="admin" ? "admin123" : "officer123";
+}
+window.fillDemo = fillDemo;
+function submitLogin(e){
+  e.preventDefault();
+  const email = document.getElementById("loginEmail").value.trim().toLowerCase();
+  const pw = document.getElementById("loginPassword").value;
+  const match = USERS.find(function(u){ return u.email.toLowerCase()===email && u.password===pw; });
+  if(match){
+    LOGIN_ERROR="";
+    S.auth = match;
+    logAudit("User Login", match.name+" signed in to the portal");
+    showToast("Welcome back, "+match.name+".","success");
+    goTo("dashboard");
+  } else {
+    LOGIN_ERROR = "Invalid email or password. Try one of the demo accounts below.";
+    render();
+  }
+}
+window.submitLogin = submitLogin;
+
+/* =======================================================================
+   SIDEBAR / TOPBAR
+======================================================================= */
+function renderSidebar(){
+  const role = S.auth.role;
+  const sections = NAV_SECTIONS.map(function(sec){
+    const items = sec.items.filter(function(it){ return !it.adminOnly || role==="Admin"; });
+    if(items.length===0) return "";
+    return '<div style="margin-bottom:22px;"><p class="nav-section-label">'+sec.label+'</p>'+
+      items.map(function(it){
+        const active = S.page===it.key;
+        return '<button class="nav-item'+(active?' active':'')+'" onclick="goTo(\''+it.key+'\')">'+
+          icon(it.icon)+'<span style="flex:1;">'+it.label+'</span>'+(active?icon("chevronright","icon"):'')+'</button>';
+      }).join('')+
+    '</div>';
+  }).join('');
+  return '<div class="sidebar-overlay'+(S.mobileOpen?' open':'')+'" onclick="toggleMobile(false)"></div>'+
+  '<aside class="sidebar'+(S.mobileOpen?' open':'')+'">'+
+    '<div class="sidebar-head"><div class="flex items-center gap-2"><div class="brand-badge">'+icon("landmark","icon-lg")+'</div>'+
+      '<div><p style="margin:0;font-weight:800;font-size:14px;">'+BRAND.name+'</p><p style="margin:0;font-size:10.5px;color:var(--slate-400);">Land Records Portal</p></div></div>'+
+      '<button class="hamburger" style="display:'+(S.mobileOpen?'inline-flex':'none')+';" onclick="toggleMobile(false)">'+icon("x")+'</button></div>'+
+    '<nav class="sidebar-nav">'+sections+'</nav>'+
+    '<div class="sidebar-foot"><div style="background:var(--slate-50);border-radius:8px;padding:12px;font-size:11.5px;color:var(--slate-500);">'+
+      '<p style="margin:0 0 3px;font-weight:700;color:var(--slate-700);">Need help?</p>Contact the district land records desk for support with rejected uploads.</div></div>'+
+  '</aside>';
+}
+function toggleMobile(v){ S.mobileOpen = v; render(); }
+window.toggleMobile = toggleMobile;
+
+function renderTopbar(){
+  const u = S.auth;
+  return '<header class="topbar">'+
+    '<div class="flex items-center gap-3">'+
+      '<button class="hamburger" onclick="toggleMobile(true)">'+icon("menu","icon-lg")+'</button>'+
+      '<p style="font-weight:800;font-size:16px;margin:0;">'+(PAGE_TITLES[S.page]||"ILRDVS")+'</p>'+
+    '</div>'+
+    '<div class="flex items-center gap-2">'+
+      '<div class="search-box">'+icon("search")+'<input type="text" placeholder="Search records…" onkeydown="if(event.key===\'Enter\')goTo(\'records\')"/></div>'+
+      '<button class="btn btn-secondary btn-sm" style="position:relative;padding:8px;border-color:transparent;box-shadow:none;">'+icon("bell")+
+        '<span style="position:absolute;top:6px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--red-500);"></span></button>'+
+      '<div style="position:relative;">'+
+        '<button class="btn btn-secondary btn-sm" style="padding:6px 10px;" onclick="toggleUserMenu()">'+
+          '<span class="avatar">'+initials(u.name)+'</span>'+
+          '<span style="text-align:left;"><span style="display:block;font-size:12px;font-weight:700;color:var(--slate-800);">'+esc(u.name)+'</span><span style="display:block;font-size:10px;color:var(--slate-400);">'+esc(u.role)+'</span></span>'+
+          icon("chevrondown")+
+        '</button>'+
+        (S.userMenuOpen ? '<div class="card" style="position:absolute;right:0;top:44px;width:170px;z-index:60;padding:4px;">'+
+          '<button class="nav-item" onclick="goTo(\'settings\')">'+icon("settings")+' Settings</button>'+
+          '<button class="nav-item" style="color:var(--red-600);" onclick="doLogout()">'+icon("logout")+' Log out</button>'+
+        '</div>' : '')+
+      '</div>'+
+    '</div>'+
+  '</header>';
+}
+function toggleUserMenu(){ S.userMenuOpen = !S.userMenuOpen; render(); }
+window.toggleUserMenu = toggleUserMenu;
+function doLogout(){
+  logAudit("User Logout", S.auth.name+" signed out of the portal");
+  S.auth=null; S.userMenuOpen=false; S.page="landing"; render();
+}
+window.doLogout = doLogout;
+
+/* =======================================================================
+   DASHBOARD
+======================================================================= */
+function renderDashboard(){
+  const total=RECORDS.length;
+  const verified=RECORDS.filter(function(r){return r.status==="Verified";}).length;
+  const pending=RECORDS.filter(function(r){return r.status==="Pending";}).length;
+  const manual=RECORDS.filter(function(r){return r.status==="Manual Verification";}).length;
+  const errors=RECORDS.filter(function(r){return r.status==="Error";}).length;
+  const cards=[
+    {label:"Total Records", value:total, icon:"files", bg:"var(--blue-50)", fg:"var(--blue-700)"},
+    {label:"Verified", value:verified, icon:"checkcircle", bg:"var(--emerald-50)", fg:"#047857"},
+    {label:"Pending Review", value:pending, icon:"clock", bg:"var(--amber-50)", fg:"#b45309"},
+    {label:"Errors / Manual", value:errors+manual, icon:"alerttriangle", bg:"var(--red-50)", fg:"#b91c1c"}
+  ];
+  const recent = RECORDS.slice().sort(function(a,b){return a.uploadedDate<b.uploadedDate?1:-1;}).slice(0,5);
+
+  return '<div class="section-head"><div><p class="eyebrow">Overview</p><h1 class="page-title">Welcome back, '+esc(S.auth.name.split(" ")[0])+'</h1>'+
+    '<p class="page-sub">Here is what is happening across the digitization queue today.</p></div>'+
+    '<button class="btn btn-primary" onclick="goTo(\'upload\')">'+icon("upload")+' Upload Record</button></div>'+
+
+    '<div class="stat-grid">'+cards.map(function(c){
+      return '<div class="card stat-card"><div class="flex items-center justify-between">'+
+        '<div class="stat-icon" style="background:'+c.bg+';color:'+c.fg+';">'+icon(c.icon,"icon-lg")+'</div>'+
+        '<span class="small" style="color:#059669;font-weight:700;display:flex;align-items:center;gap:3px;">'+icon("trendingup")+' +4.2%</span></div>'+
+        '<p class="stat-value">'+c.value+'</p><p class="small muted">'+c.label+'</p></div>';
+    }).join('')+'</div>'+
+
+    '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:18px;" class="dash-row1">'+
+      '<div class="card" style="padding:20px;"><p style="font-weight:700;font-size:14px;margin:0 0 2px;">Monthly Upload Volume</p><p class="small muted" style="margin:0 0 14px;">Documents submitted for digitization</p>'+
+      '<div style="height:230px;"><canvas id="chartMonthly"></canvas></div></div>'+
+      '<div class="card" style="padding:20px;"><p style="font-weight:700;font-size:14px;margin:0 0 2px;">Status Breakdown</p><p class="small muted" style="margin:0 0 14px;">'+total+' total records</p>'+
+      '<div style="height:170px;"><canvas id="chartStatus"></canvas></div>'+
+      '<div style="margin-top:12px;">'+
+        [["Verified","#059669",verified],["Pending","#d97706",pending],["Manual Verification","#ea580c",manual],["Error","#dc2626",errors]].map(function(x){
+          return '<div class="flex items-center justify-between small" style="margin-bottom:5px;"><span class="flex items-center gap-1" style="color:var(--slate-500);"><span class="dot" style="background:'+x[1]+'"></span>'+x[0]+'</span><span style="font-weight:700;color:var(--slate-700);">'+x[2]+'</span></div>';
+        }).join('')+
+      '</div></div>'+
+    '</div>'+
+
+    '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;margin-top:16px;" class="dash-row2">'+
+      '<div class="card" style="padding:20px;"><p style="font-weight:700;font-size:14px;margin:0 0 2px;">Records by District</p><p class="small muted" style="margin:0 0 14px;">Current digitized volume</p>'+
+      '<div style="height:210px;"><canvas id="chartDistrict"></canvas></div></div>'+
+      '<div class="card">'+
+        '<div class="flex items-center justify-between" style="padding:16px 20px;border-bottom:1px solid var(--slate-100);">'+
+          '<p style="font-weight:700;font-size:14px;margin:0;">Recent Records</p>'+
+          '<button onclick="goTo(\'records\')" class="small" style="background:none;border:none;color:var(--blue-700);font-weight:700;">View all</button></div>'+
+        recent.map(function(r){
+          return '<button class="rowlink" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;padding:13px 20px;border-bottom:1px solid var(--slate-50);box-sizing:border-box;" onclick="goTo(\'record-details\',\''+r.id+'\')" onmouseover="this.style.background=\'var(--slate-50)\'" onmouseout="this.style.background=\'\'">'+
+            '<span><span style="display:block;font-weight:700;font-size:13px;">'+esc(r.ownerName)+'</span><span class="small muted">'+r.id+' · '+esc(r.village)+', '+esc(r.district)+'</span></span>'+
+            statusBadge(r.status)+'</button>';
+        }).join('')+
+      '</div>'+
+    '</div>'+
+    '<style>@media(max-width:900px){.dash-row1,.dash-row2{grid-template-columns:1fr !important;}}</style>';
+}
+function buildDashboardCharts(){
+  ["chartMonthly","chartStatus","chartDistrict"].forEach(function(id){ if(CHARTS[id]){CHARTS[id].destroy(); delete CHARTS[id];} });
+  const monthlyEl = document.getElementById("chartMonthly");
+  if(monthlyEl){
+    CHARTS.chartMonthly = new Chart(monthlyEl, { type:"line",
+      data:{ labels:["Jan","Feb","Mar","Apr","May"], datasets:[{ label:"Uploads", data:[62,74,88,95,112], borderColor:"#1d4ed8", backgroundColor:"rgba(29,78,216,.08)", fill:true, tension:.35, pointBackgroundColor:"#1d4ed8" }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:"#f1f5f9"} }, x:{ grid:{display:false} } }, maintainAspectRatio:false }
+    });
+  }
+  const statusEl = document.getElementById("chartStatus");
+  if(statusEl){
+    const verified=RECORDS.filter(function(r){return r.status==="Verified";}).length;
+    const pending=RECORDS.filter(function(r){return r.status==="Pending";}).length;
+    const manual=RECORDS.filter(function(r){return r.status==="Manual Verification";}).length;
+    const errors=RECORDS.filter(function(r){return r.status==="Error";}).length;
+    CHARTS.chartStatus = new Chart(statusEl, { type:"doughnut",
+      data:{ labels:["Verified","Pending","Manual Verification","Error"], datasets:[{ data:[verified,pending,manual,errors], backgroundColor:["#059669","#d97706","#ea580c","#dc2626"], borderWidth:0 }] },
+      options:{ plugins:{legend:{display:false}}, cutout:"65%", maintainAspectRatio:false }
+    });
+  }
+  const districtEl = document.getElementById("chartDistrict");
+  if(districtEl){
+    CHARTS.chartDistrict = new Chart(districtEl, { type:"bar",
+      data:{ labels:DISTRICTS.map(function(d){return d.replace(" Godavari"," Godav.");}), datasets:[{ data:DISTRICTS.map(function(d){return RECORDS.filter(function(r){return r.district===d;}).length;}), backgroundColor:"#2563eb", borderRadius:4, maxBarThickness:34 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ y:{ grid:{color:"#f1f5f9"}, ticks:{precision:0} }, x:{ grid:{display:false} } }, maintainAspectRatio:false }
+    });
+  }
+}
+
+/* =======================================================================
+   UPLOAD PAGE
+======================================================================= */
+const STAGES_REAL = ["Uploading","Reading Document","OCR Processing","Extracting Fields","Completed"];
+const STAGES_DEMO = ["Uploading","OCR Processing","Extracting Fields","Validating","Completed"];
+function sleep(ms){ return new Promise(function(res){ setTimeout(res, ms); }); }
+
+function renderUpload(){
+  const up = S.upload;
+  return '<div class="section-head"><div><p class="eyebrow">Digitization Workflow · Step 1</p><h1 class="page-title">Upload Land Record</h1><p class="page-sub">Submit a scanned land deed to begin OCR extraction and validation.</p></div></div>'+
+
+  '<div class="flex gap-2" style="margin-bottom:16px;flex-wrap:wrap;">'+
+    '<button onclick="setUploadMode(\'real\')" style="border:1px solid '+(S.uploadMode==="real"?"var(--blue-600)":"var(--slate-200)")+';background:'+(S.uploadMode==="real"?"var(--blue-700)":"#fff")+';color:'+(S.uploadMode==="real"?"#fff":"var(--slate-600)")+';border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:7px;">'+icon("scan")+' Real Document Processing</button>'+
+    '<button onclick="setUploadMode(\'demo\')" style="border:1px solid '+(S.uploadMode==="demo"?"var(--blue-600)":"var(--slate-200)")+';background:'+(S.uploadMode==="demo"?"var(--blue-700)":"#fff")+';color:'+(S.uploadMode==="demo"?"#fff":"var(--slate-600)")+';border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:7px;">'+icon("layers")+' Demo Scenario</button>'+
+  '</div>'+
+
+  (S.uploadMode==="real" ? renderRealUploadPanel(up) : renderDemoUploadPanel(up))+
+  '<style>@media(max-width:900px){.upload-grid{grid-template-columns:1fr !important;}}</style>';
+}
+
+function renderRealUploadPanel(up){
+  return '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;" class="upload-grid">'+
+    '<div class="card" style="padding:24px;">'+
+      '<div class="pill" style="margin-bottom:16px;">'+icon("checkcircle")+' Real Document Processing — the file you upload is actually read and OCR\u2019d</div>'+
+
+      '<div class="upload-drop'+(up.dragOver?' drag':'')+'" id="dropZone" ondragover="onRealDragOver(event)" ondragleave="onRealDragLeave(event)" ondrop="onRealDrop(event)">'+
+        '<div style="width:56px;height:56px;border-radius:50%;background:var(--blue-100);color:var(--blue-700);display:flex;align-items:center;justify-content:center;margin:0 auto;">'+icon("upload","icon-lg")+'</div>'+
+        '<p style="font-weight:700;font-size:13.5px;margin:14px 0 2px;">Drag &amp; drop your actual land record here</p>'+
+        '<p class="small muted" style="margin:0 0 14px;">PDF (digital or scanned), JPG, or PNG · Max ~10MB · Processed entirely in your browser</p>'+
+        '<label class="btn btn-secondary btn-sm" style="display:inline-flex;">Browse Files<input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,application/pdf,image/*" style="display:none;" onchange="onRealFileInput(this.files[0])"/></label>'+
+      '</div>'+
+
+      (up.fileName ? '<div class="flex items-center gap-3 card" style="padding:12px 14px;margin-top:18px;">'+
+        '<div style="width:36px;height:36px;border-radius:8px;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;">'+icon("file")+'</div>'+
+        '<div style="flex:1;min-width:0;"><p style="margin:0;font-weight:700;font-size:13px;word-break:break-all;">'+esc(up.fileName)+'</p><p class="small muted" style="margin:0;">'+(up.file?Math.max(1,Math.round(up.file.size/1024))+" KB · Ready to process":"Ready to process")+'</p></div>'+
+        (!up.running ? '<button style="background:none;border:none;color:var(--slate-400);" onclick="clearRealFile()">'+icon("x")+'</button>' : '')+
+      '</div>' : '')+
+
+      (up.error ? '<div class="flex items-start gap-2 small" style="border:1px solid var(--red-200);background:var(--red-50);color:#b91c1c;border-radius:8px;padding:12px;margin-top:16px;font-weight:600;">'+icon("info")+esc(up.error)+'</div>' : '')+
+
+      (up.stageIdx>=0 ? (function(){
+        var pct = up.progress;
+        var label = up.stageLabel || STAGES_REAL[up.stageIdx];
+        var html = '<div style="margin-top:22px;"><div class="flex items-center justify-between small" style="margin-bottom:8px;"><span style="font-weight:700;color:var(--slate-500);">'+esc(label)+'…</span><span style="font-weight:700;color:var(--blue-700);">'+pct+'%</span></div>'+
+        '<div style="height:8px;border-radius:999px;background:var(--slate-100);overflow:hidden;"><div style="height:8px;border-radius:999px;background:var(--blue-600);width:'+pct+'%;transition:width .15s;"></div></div>'+
+        '<div class="stage-grid">'+STAGES_REAL.map(function(s,i){
+          var cls = i<up.stageIdx ? "done" : (i===up.stageIdx ? "active pulse" : "");
+          return '<div style="text-align:center;"><div class="stage-node '+cls+'">'+(i<up.stageIdx?icon("check"):(i+1))+'</div><p class="small" style="margin:0;font-size:10px;font-weight:600;color:'+(i<=up.stageIdx?"var(--slate-700)":"var(--slate-300)")+';">'+s+'</p></div>';
+        }).join('')+'</div>';
+        if(up.stageIdx===STAGES_REAL.length-1){
+          html += '<p class="flex items-center justify-center gap-1 small" style="color:#047857;font-weight:700;margin-top:16px;">'+icon("checkcircle")+' Processing complete — opening extracted data…</p>';
+        }
+        html += '</div>';
+        return html;
+      })() : '')+
+
+      (!up.running ? '<button class="btn btn-primary btn-block" style="margin-top:22px;padding:12px;" '+(!up.file?'disabled':'')+' onclick="startRealProcessing()">'+icon("scan")+' Start Real OCR Processing</button>' : '')+
+    '</div>'+
+
+    '<div>'+
+      '<div class="card" style="padding:18px;margin-bottom:16px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 10px;">How this works</p>'+
+        [
+          ["file","Digital PDFs: text layer is read directly with PDF.js — no OCR guessing needed."],
+          ["scan","Scanned PDFs / images: pages are OCR\u2019d in-browser with Tesseract.js."],
+          ["clipboardcheck","Fields are then pulled from the recognized text and shown for your review."]
+        ].map(function(t){
+          return '<div class="flex gap-2 small" style="color:var(--slate-500);margin-bottom:10px;">'+icon(t[0],"icon")+t[1]+'</div>';
+        }).join('')+
+      '</div>'+
+      '<div class="card" style="padding:18px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 10px;">Tips for best OCR results</p>'+
+        ['Scan at 300 DPI or higher','Ensure all four corners are visible','Avoid glare and shadows on the document','Typed/printed text OCRs far more accurately than handwriting'].map(function(t){
+          return '<div class="flex gap-2 small" style="color:var(--slate-500);margin-bottom:8px;">'+icon("checkcircle","icon")+t+'</div>';
+        }).join('')+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function renderDemoUploadPanel(up){
+  const sc = SCENARIOS[S.scenarioKey];
+  return '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;" class="upload-grid">'+
+    '<div class="card" style="padding:24px;">'+
+      '<div class="pill" style="margin-bottom:16px;background:var(--slate-100);border-color:var(--slate-200);color:var(--slate-600);">'+icon("layers")+' Demo Scenario — simulated OCR using pre-written sample data, no real file is read</div>'+
+      '<div class="upload-drop">'+
+        '<div style="width:56px;height:56px;border-radius:50%;background:var(--blue-100);color:var(--blue-700);display:flex;align-items:center;justify-content:center;margin:0 auto;">'+icon("upload","icon-lg")+'</div>'+
+        '<p style="font-weight:700;font-size:13.5px;margin:14px 0 2px;">Simulated document</p>'+
+        '<p class="small muted" style="margin:0 0 14px;">Pick a scenario on the right, then load its sample document below.</p>'+
+        '<button class="btn btn-secondary btn-sm" onclick="onDemoFilePicked(\''+esc(sc.fileName)+'\')">Use sample document for '+sc.label+'</button>'+
+      '</div>'+
+
+      (up.fileName ? '<div class="flex items-center gap-3 card" style="padding:12px 14px;margin-top:18px;">'+
+        '<div style="width:36px;height:36px;border-radius:8px;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;">'+icon("file")+'</div>'+
+        '<div style="flex:1;"><p style="margin:0;font-weight:700;font-size:13px;">'+esc(up.fileName)+'</p><p class="small muted" style="margin:0;">Ready to simulate</p></div>'+
+        (!up.running ? '<button style="background:none;border:none;color:var(--slate-400);" onclick="onDemoFilePicked(\'\')">'+icon("x")+'</button>' : '')+
+      '</div>' : '')+
+
+      (up.stageIdx>=0 ? (function(){
+        var pct = up.progress;
+        var html = '<div style="margin-top:22px;"><div class="flex items-center justify-between small" style="margin-bottom:8px;"><span style="font-weight:700;color:var(--slate-500);">'+STAGES_DEMO[up.stageIdx]+'…</span><span style="font-weight:700;color:var(--blue-700);">'+pct+'%</span></div>'+
+        '<div style="height:8px;border-radius:999px;background:var(--slate-100);overflow:hidden;"><div style="height:8px;border-radius:999px;background:var(--blue-600);width:'+pct+'%;transition:width .15s;"></div></div>'+
+        '<div class="stage-grid">'+STAGES_DEMO.map(function(s,i){
+          var cls = i<up.stageIdx ? "done" : (i===up.stageIdx ? "active pulse" : "");
+          return '<div style="text-align:center;"><div class="stage-node '+cls+'">'+(i<up.stageIdx?icon("check"):(i+1))+'</div><p class="small" style="margin:0;font-size:10px;font-weight:600;color:'+(i<=up.stageIdx?"var(--slate-700)":"var(--slate-300)")+';">'+s+'</p></div>';
+        }).join('')+'</div>';
+        if(up.stageIdx===STAGES_DEMO.length-1){
+          html += '<p class="flex items-center justify-center gap-1 small" style="color:#047857;font-weight:700;margin-top:16px;">'+icon("checkcircle")+' Processing complete — opening extracted data…</p>';
+        }
+        html += '</div>';
+        return html;
+      })() : '')+
+
+      (!up.running ? '<button class="btn btn-primary btn-block" style="margin-top:22px;padding:12px;" '+(!up.fileName?'disabled':'')+' onclick="startDemoProcessing()">'+icon("scan")+' Run Demo Scenario</button>' : '')+
+    '</div>'+
+
+    '<div>'+
+      '<div class="card" style="padding:18px;margin-bottom:16px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 4px;">Demo Scenario</p><p class="small muted" style="margin:0 0 14px;">Pick which sample document the pipeline should simulate.</p>'+
+        Object.values(SCENARIOS).map(function(s){
+          const active = S.scenarioKey===s.key;
+          return '<button style="all:unset;cursor:pointer;display:block;width:100%;box-sizing:border-box;border-radius:8px;padding:11px;margin-bottom:8px;border:1px solid '+(active?'var(--blue-500)':'var(--slate-200)')+';background:'+(active?'var(--blue-50)':'#fff')+';" onclick="selectScenario(\''+s.key+'\')">'+
+            '<p style="margin:0;font-weight:700;font-size:12.5px;">'+s.label+'</p><p class="small muted" style="margin:3px 0 0;">'+s.description+'</p></button>';
+        }).join('')+
+      '</div>'+
+      '<div class="card" style="padding:18px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 10px;">About demo mode</p>'+
+        '<p class="small muted" style="margin:0;line-height:1.6;">Demo scenarios use fixed sample text so you can see the Successful Validation and Land Area Mismatch cases on demand. No file is actually read in this mode — switch to Real Document Processing to OCR an actual upload.</p>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function setUploadMode(mode){
+  clearUploadTimers();
+  S.uploadMode = mode;
+  S.upload = { fileName:"", file:null, stageIdx:-1, progress:0, stageLabel:"", running:false, error:"", dragOver:false, timers:[] };
+  render();
+}
+window.setUploadMode = setUploadMode;
+
+/* ---- Demo scenario handlers (unchanged simulated pipeline) ---- */
+function onDemoFilePicked(name){ S.upload.fileName=name; S.upload.stageIdx=-1; S.upload.progress=0; S.upload.error=""; render(); }
+function selectScenario(key){ S.scenarioKey=key; S.upload.fileName=""; S.upload.stageIdx=-1; render(); }
+window.onDemoFilePicked=onDemoFilePicked; window.selectScenario=selectScenario;
+
+function startDemoProcessing(){
+  if(!S.upload.fileName) return;
+  clearUploadTimers();
+  S.upload.running=true; S.upload.stageIdx=0; S.upload.progress=0;
+  render();
+  let p=0;
+  const progTimer = setInterval(function(){
+    p+=8; if(p>=100){p=100; clearInterval(progTimer);}
+    S.upload.progress=p; render();
+  },90);
+  S.upload.timers.push(progTimer);
+  STAGES_DEMO.forEach(function(_,i){
+    const t = setTimeout(function(){
+      S.upload.stageIdx=i; render();
+      if(i===STAGES_DEMO.length-1){
+        const done = setTimeout(function(){ completeDemoUpload(); }, 700);
+        S.upload.timers.push(done);
+      }
+    }, i*950+300);
+    S.upload.timers.push(t);
+  });
+}
+function completeDemoUpload(){
+  const sc = SCENARIOS[S.scenarioKey];
+  S.ocrSource = "demo";
+  S.demoScenario = sc;
+  S.realOcr = null;
+  S.fields = Object.assign({}, sc.extracted);
+  S.validation = null;
+  S.upload = { fileName:"", file:null, stageIdx:-1, progress:0, stageLabel:"", running:false, error:"", dragOver:false, timers:[] };
+  logAudit("Ran Demo Scenario", sc.fileName+" simulated via "+sc.label);
+  goTo("ocr");
+}
+window.startDemoProcessing = startDemoProcessing;
+
+/* ---- Real document handlers (actually reads & OCRs the uploaded file) ---- */
+function onRealDragOver(e){ e.preventDefault(); S.upload.dragOver=true; render(); }
+function onRealDragLeave(e){ S.upload.dragOver=false; render(); }
+function onRealDrop(e){
+  e.preventDefault(); S.upload.dragOver=false;
+  const f = e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f) onRealFileInput(f);
+}
+function onRealFileInput(file){
+  if(!file) return;
+  S.upload.file=file; S.upload.fileName=file.name; S.upload.stageIdx=-1; S.upload.progress=0; S.upload.error="";
+  render();
+}
+function clearRealFile(){ S.upload.file=null; S.upload.fileName=""; S.upload.stageIdx=-1; S.upload.progress=0; S.upload.error=""; render(); }
+window.onRealDragOver=onRealDragOver; window.onRealDragLeave=onRealDragLeave; window.onRealDrop=onRealDrop; window.onRealFileInput=onRealFileInput; window.clearRealFile=clearRealFile;
+
+/* Parse labelled fields out of raw recognized text, with a confidence baseline (0-100) */
+function parseFieldsFromText(rawText, baseline){
+  const fields={}, confidence={};
+  Object.keys(FIELD_LABELS).forEach(function(key){
+    const pattern = FIELD_PATTERNS[key];
+    let value="";
+    if(pattern){
+      const m = rawText.match(pattern);
+      if(m && m[1]) value = m[1].trim().replace(/[\s,;:]+$/,"");
+    }
+    fields[key]=value;
+    if(value){
+      const jitter = Math.round((Math.random()*6)-3);
+      confidence[key] = Math.max(35, Math.min(99, baseline+jitter));
+    } else {
+      confidence[key] = 0;
+    }
+  });
+  const confs = Object.values(confidence);
+  const avg = Math.round(confs.reduce(function(a,b){return a+b;},0)/confs.length);
+  return { fields:fields, confidence:confidence, avgConfidence:avg };
+}
+
+async function startRealProcessing(){
+  if(!S.upload.file) return;
+  clearUploadTimers();
+  const file = S.upload.file;
+  S.upload.running=true; S.upload.error=""; S.upload.stageIdx=0; S.upload.stageLabel="Uploading"; S.upload.progress=8;
+  render();
+  try{
+    await sleep(350);
+    S.upload.stageIdx=1; S.upload.stageLabel="Reading Document"; S.upload.progress=18; render();
+
+    const isPdf = file.type==="application/pdf" || /\.pdf$/i.test(file.name);
+    const isImage = file.type.indexOf("image/")===0 || /\.(png|jpe?g|bmp|webp|tiff?)$/i.test(file.name);
+    if(!isPdf && !isImage) throw new Error("Unsupported file type. Please upload a PDF, JPG, or PNG land record.");
+
+    let rawText = "";
+    let engine = "";
+    let baseline = 70;
+
+    if(isPdf){
+      if(typeof pdfjsLib==="undefined") throw new Error("The PDF engine failed to load (check your internet connection) — try again, or use Demo Scenario mode.");
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+      let textParts=[];
+      for(let p=1;p<=pdf.numPages;p++){
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        textParts.push(content.items.map(function(it){return it.str;}).join(" "));
+      }
+      rawText = textParts.join("\n").trim();
+
+      if(rawText.replace(/\s/g,"").length < 25){
+        S.upload.stageIdx=2; S.upload.stageLabel="OCR Processing (scanned PDF)"; S.upload.progress=32; render();
+        if(typeof Tesseract==="undefined") throw new Error("The OCR engine failed to load (check your internet connection) — try again, or use Demo Scenario mode.");
+        const worker = await Tesseract.createWorker('eng', 1, { logger:function(m){
+          if(m.status==="recognizing text"){ S.upload.progress = 32 + Math.round(m.progress*55); render(); }
+        }});
+        const maxPages = Math.min(pdf.numPages, 3);
+        let ocrParts=[]; let confs=[];
+        for(let p=1;p<=maxPages;p++){
+          const page = await pdf.getPage(p);
+          const viewport = page.getViewport({scale:2});
+          const canvas = document.createElement("canvas");
+          canvas.width=viewport.width; canvas.height=viewport.height;
+          const ctx = canvas.getContext("2d");
+          await page.render({canvasContext:ctx, viewport:viewport}).promise;
+          const res = await worker.recognize(canvas);
+          ocrParts.push(res.data.text || "");
+          confs.push(res.data.confidence || 0);
+        }
+        await worker.terminate();
+        rawText = ocrParts.join("\n").trim();
+        baseline = confs.length ? Math.round(confs.reduce(function(a,b){return a+b;},0)/confs.length) : 55;
+        engine = "Tesseract.js OCR (scanned PDF pages)";
+      } else {
+        engine = "PDF.js text layer (digital PDF)";
+        baseline = 99;
+        S.upload.stageIdx=2; S.upload.stageLabel="OCR Processing"; S.upload.progress=90; render();
+        await sleep(250);
+      }
+    } else {
+      S.upload.stageIdx=2; S.upload.stageLabel="OCR Processing"; S.upload.progress=28; render();
+      if(typeof Tesseract==="undefined") throw new Error("The OCR engine failed to load (check your internet connection) — try again, or use Demo Scenario mode.");
+      const worker = await Tesseract.createWorker('eng', 1, { logger:function(m){
+        if(m.status==="recognizing text"){ S.upload.progress = 28 + Math.round(m.progress*62); render(); }
+      }});
+      const res = await worker.recognize(file);
+      await worker.terminate();
+      rawText = (res.data.text||"").trim();
+      baseline = Math.round(res.data.confidence || 60);
+      engine = "Tesseract.js OCR (image)";
+    }
+
+    S.upload.stageIdx=3; S.upload.stageLabel="Extracting Fields"; S.upload.progress=97; render();
+    await sleep(300);
+
+    if(!rawText){ throw new Error("No readable text could be found in this document. Try a clearer scan, or use Demo Scenario mode."); }
+
+    const parsed = parseFieldsFromText(rawText, baseline);
+    S.realOcr = { fileName:file.name, rawText:rawText, confidence:parsed.confidence, engine:engine, avgConfidence:parsed.avgConfidence };
+    S.fields = parsed.fields;
+    S.ocrSource = "real";
+    S.demoScenario = null;
+    S.validation = null;
+
+    S.upload.stageIdx=4; S.upload.stageLabel="Completed"; S.upload.progress=100; render();
+    logAudit("Uploaded Document", file.name+" uploaded and processed via "+engine);
+    await sleep(600);
+    S.upload = { fileName:"", file:null, stageIdx:-1, progress:0, stageLabel:"", running:false, error:"", dragOver:false, timers:[] };
+    goTo("ocr");
+  } catch(err){
+    clearUploadTimers();
+    S.upload.running=false; S.upload.stageIdx=-1; S.upload.progress=0;
+    S.upload.error = (err && err.message) ? err.message : "Something went wrong while processing this document.";
+    render();
+    showToast("Processing failed — see details on the upload page.","error");
+  }
+}
+window.startRealProcessing = startRealProcessing;
+
+/* =======================================================================
+   OCR RESULT PAGE
+======================================================================= */
+function renderOcr(){
+  const isReal = S.ocrSource==="real";
+  const fname = currentFileName() || "(no document processed yet)";
+  const avg = currentAvgConfidence();
+  const engine = currentEngineLabel();
+  return '<div class="section-head"><div><p class="eyebrow">Digitization Workflow · Step 2</p><h1 class="page-title">OCR / Extracted Data</h1><p class="page-sub">Extracted from '+esc(fname)+'. Review and correct any field before validation.</p></div>'+
+    '<div class="flex items-center gap-2">'+
+      '<span class="badge" style="'+(isReal?'background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-700);':'background:var(--slate-100);border-color:var(--slate-200);color:var(--slate-600);')+'">'+icon(isReal?"checkcircle":"layers")+(isReal?"Real Document Processing":"Demo Scenario")+'</span>'+
+      confChip(avg)+
+    '</div></div>'+
+  '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;" class="ocr-grid">'+
+    '<div class="card" style="padding:22px;text-align:center;">'+
+      '<div style="height:180px;border:2px dashed var(--slate-300);border-radius:8px;background:var(--slate-50);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--slate-300);">'+icon("file","icon-xl")+'<p class="small" style="color:var(--slate-400);margin-top:8px;word-break:break-all;padding:0 10px;">'+esc(fname)+'</p></div>'+
+      '<div style="margin-top:16px;text-align:left;">'+
+        '<div class="flex items-center justify-between small" style="margin-bottom:8px;"><span class="muted">Source</span><span style="font-weight:700;">'+(isReal?"Uploaded file":"Simulated sample")+'</span></div>'+
+        '<div class="flex items-center justify-between small" style="margin-bottom:8px;"><span class="muted">Engine</span><span style="font-weight:700;text-align:right;">'+esc(engine)+'</span></div>'+
+        '<div class="flex items-center justify-between small"><span class="muted">Overall confidence</span>'+confChip(avg)+'</div>'+
+      '</div>'+
+      (isReal && S.realOcr ? '<details style="margin-top:16px;text-align:left;"><summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--blue-700);">View Raw Extracted Text</summary>'+
+        '<pre style="white-space:pre-wrap;word-break:break-word;background:var(--slate-50);border:1px solid var(--slate-200);border-radius:8px;padding:10px;font-size:11px;color:var(--slate-600);max-height:220px;overflow:auto;margin-top:8px;">'+esc(S.realOcr.rawText||"(no text recognized)")+'</pre></details>' : '')+
+    '</div>'+
+    '<div class="card" style="padding:22px;">'+
+      '<p style="font-weight:700;font-size:14px;margin:0 0 16px;">Extracted Fields</p>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="field-grid">'+
+        Object.keys(FIELD_LABELS).map(function(key){
+          const c = currentFieldConfidence(key);
+          return '<div><div class="flex items-center justify-between" style="margin-bottom:6px;"><label class="field-label" style="margin:0;">'+icon(FIELD_ICONS[key])+FIELD_LABELS[key]+'</label>'+(c>0?confChip(c):'<span class="badge" style="background:var(--slate-100);border-color:var(--slate-200);color:var(--slate-400);">not detected</span>')+'</div>'+
+            '<input type="text" id="ocr_'+key+'" value="'+esc(S.fields[key])+'" placeholder="Not detected — enter manually" oninput="updateOcrField(\''+key+'\', this.value)"/>'+
+            '<div style="margin-top:6px;">'+confBar(c, false)+'</div></div>';
+        }).join('')+
+      '</div>'+
+      '<div class="flex items-center justify-between" style="border-top:1px solid var(--slate-100);margin-top:22px;padding-top:16px;flex-wrap:wrap;gap:10px;">'+
+        '<p class="small muted flex items-center gap-1" style="margin:0;">'+icon("info")+' Edits are saved locally and used for validation.</p>'+
+        '<div class="flex gap-2">'+
+          '<button class="btn btn-secondary" onclick="goTo(\'upload\')">'+icon("arrowleft")+' Re-upload</button>'+
+          '<button class="btn btn-primary" onclick="goTo(\'validation\')">Proceed to Validation '+icon("arrowright")+'</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<style>@media(max-width:900px){.ocr-grid,.field-grid{grid-template-columns:1fr !important;}}</style>';
+}
+function updateOcrField(key,val){
+  S.fields[key]=val;
+  if(S.ocrSource==="real" && S.realOcr){ S.realOcr.confidence[key] = val ? Math.max(S.realOcr.confidence[key]||0, 60) : 0; }
+  render();
+}
+window.updateOcrField = updateOcrField;
+
+/* =======================================================================
+   VALIDATION LOGIC + PAGE
+   Validates whatever is currently in S.fields — real OCR output or demo
+   scenario output — against the live RECORDS registry. No hard-coded
+   demo answers are used here.
+======================================================================= */
+function findRegistryMatch(fields){
+  if(!fields.surveyNumber) return null;
+  const sn = fields.surveyNumber.trim().toLowerCase();
+  if(!sn) return null;
+  return RECORDS.find(function(r){
+    if(!r.surveyNumber) return false;
+    const sameSurvey = r.surveyNumber.trim().toLowerCase()===sn;
+    const sameVillage = !fields.village || !r.village || r.village.trim().toLowerCase()===fields.village.trim().toLowerCase();
+    return sameSurvey && sameVillage;
+  }) || null;
+}
+function computeValidation(fields){
+  const match = findRegistryMatch(fields);
+  const issues=[];
+  const rows = Object.keys(FIELD_LABELS).map(function(key){
+    const extracted = (fields[key]||"").trim();
+    const missing = extracted==="";
+    if(!match){
+      if(missing) issues.push({type:"Missing Information", field:FIELD_LABELS[key], detail:FIELD_LABELS[key]+" was not detected in the document."});
+      return {key:key, extracted:extracted, db:"", missing:missing, status:missing?"missing":"new"};
+    }
+    const db = match[key]!==undefined ? String(match[key]) : "";
+    const hasDb = db!=="";
+    const isMatch = !missing && hasDb && extracted.toLowerCase()===db.toLowerCase();
+    let status;
+    if(missing){ status="missing"; issues.push({type:"Missing Information", field:FIELD_LABELS[key], detail:FIELD_LABELS[key]+" was not detected in the document."}); }
+    else if(!hasDb){ status="new"; }
+    else if(isMatch){ status="match"; }
+    else {
+      status="mismatch";
+      if(key==="ownerName") issues.push({type:"Owner Mismatch", field:FIELD_LABELS[key], detail:'Extracted owner "'+extracted+'" differs from registry owner "'+db+'".'});
+      else if(key==="surveyNumber") issues.push({type:"Survey Number Issue", field:FIELD_LABELS[key], detail:'Survey number "'+extracted+'" could not be matched to registry "'+db+'".'});
+      else if(key==="landArea") issues.push({type:"Land Area Mismatch", field:FIELD_LABELS[key], detail:'Extracted area "'+extracted+'" does not match registry area "'+db+'".'});
+      else issues.push({type:"Field Mismatch", field:FIELD_LABELS[key], detail:'"'+extracted+'" does not match registry value "'+db+'".'});
+    }
+    return {key:key, extracted:extracted, db:db, missing:missing, status:status};
+  });
+
+  let overall, status;
+  if(match){
+    const comparable = rows.filter(function(r){return r.db!=="";});
+    const matchCount = rows.filter(function(r){return r.status==="match";}).length;
+    overall = comparable.length ? Math.round((matchCount/comparable.length)*100) : 0;
+    status = issues.length===0 ? "Verified" : (overall>=90 ? "Verified" : "Manual Verification");
+  } else {
+    const ocrAvg = currentAvgConfidence();
+    const completeness = rows.filter(function(r){return !r.missing;}).length / rows.length;
+    overall = Math.round(0.55*ocrAvg + 0.45*completeness*100);
+    status = (issues.length===0 && overall>=90) ? "Verified" : "Manual Verification";
+  }
+  return {rows:rows, issues:issues, overall:overall, status:status, matchRecord:match};
+}
+function renderValidation(){
+  const result = computeValidation(S.fields);
+  const dupes = RECORDS.filter(function(r){
+    return r.surveyNumber===S.fields.surveyNumber && r.village===S.fields.village && (!result.matchRecord || r.id!==result.matchRecord.id);
+  });
+  const refLabel = result.matchRecord ? ("Registry reference: "+result.matchRecord.id) : "No matching registry record found — this will be filed as a new record";
+  return '<div class="section-head"><div><p class="eyebrow">Digitization Workflow · Step 3</p><h1 class="page-title">Validation</h1><p class="page-sub">Comparing extracted data against the existing registry record.</p></div></div>'+
+  '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;" class="val-grid">'+
+    '<div class="card" style="overflow:hidden;">'+
+      '<div style="padding:16px 20px;border-bottom:1px solid var(--slate-100);"><p style="font-weight:700;font-size:14px;margin:0;">Field-by-field Comparison</p><p class="small muted" style="margin:2px 0 0;">'+refLabel+'</p></div>'+
+      '<div class="table-wrap"><table><thead><tr><th>Field</th><th>Extracted</th><th>Database</th><th>Status</th></tr></thead><tbody>'+
+        result.rows.map(function(r){
+          const rowBg = r.status==="mismatch" ? "background:#fef2f2" : (r.status==="missing" ? "background:#fffbeb" : "");
+          let statusHtml;
+          if(r.status==="match") statusHtml='<span class="flex items-center gap-1 small" style="color:#059669;font-weight:700;">'+icon("checkcircle")+' Match</span>';
+          else if(r.status==="mismatch") statusHtml='<span class="flex items-center gap-1 small" style="color:#dc2626;font-weight:700;">'+icon("xcircle")+' Mismatch</span>';
+          else if(r.status==="missing") statusHtml='<span class="flex items-center gap-1 small" style="color:#b45309;font-weight:700;">'+icon("alerttriangle")+' Missing</span>';
+          else statusHtml='<span class="flex items-center gap-1 small" style="color:var(--blue-700);font-weight:700;">'+icon("info")+' New value</span>';
+          return '<tr style="'+rowBg+'"><td style="font-weight:600;color:var(--slate-700);">'+FIELD_LABELS[r.key]+'</td>'+
+          '<td>'+(r.extracted || '<span style="font-style:italic;color:var(--slate-300);">empty</span>')+'</td><td>'+(r.db ? esc(r.db) : '<span style="font-style:italic;color:var(--slate-300);">—</span>')+'</td>'+
+          '<td>'+statusHtml+'</td></tr>';
+        }).join('')+
+      '</tbody></table></div>'+
+      '<div class="flex justify-between" style="padding:16px 20px;border-top:1px solid var(--slate-100);flex-wrap:wrap;gap:10px;">'+
+        '<button class="btn btn-secondary" onclick="goTo(\'ocr\')">'+icon("arrowleft")+' Back to Extracted Data</button>'+
+        '<button class="btn btn-primary" onclick="runValidationCheck()">'+icon("clipboardcheck")+' Run Validation Check</button>'+
+      '</div>'+
+    '</div>'+
+    '<div>'+
+      '<div class="card" style="padding:18px;margin-bottom:16px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 12px;">Checks Performed</p>'+
+        [["clipboardcheck","Missing information scan"],["user","Owner name match"],["hash","Survey number lookup"],["ruler","Land area comparison"],["copy","Duplicate record scan"]].map(function(x){
+          return '<div class="flex gap-2 small" style="color:var(--slate-500);margin-bottom:10px;">'+icon(x[0])+x[1]+'</div>';
+        }).join('')+
+      '</div>'+
+      '<div class="card" style="padding:18px;">'+
+        '<p style="font-weight:700;font-size:13.5px;margin:0 0 2px;">Live Preview</p><p class="small muted" style="margin:0 0 12px;">Based on current field values</p>'+
+        '<div class="flex items-center gap-3">'+
+          '<div style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;background:'+(result.overall>=90?'var(--emerald-50)':'var(--orange-50)')+';color:'+(result.overall>=90?'#059669':'#ea580c')+';">'+result.overall+'</div>'+
+          '<div><p class="small" style="font-weight:700;margin:0;">'+result.overall+'% match confidence</p><p class="small muted" style="margin:0;">'+(result.issues.length===0?"No issues detected":result.issues.length+" issue"+(result.issues.length>1?"s":"")+" found")+'</p></div>'+
+        '</div>'+
+        (dupes.length>0 ? '<div class="flex gap-2 small" style="border:1px solid var(--orange-200);background:var(--orange-50);color:#c2410c;border-radius:8px;padding:10px;margin-top:12px;">'+icon("copy")+' Potential duplicate of '+dupes.map(function(d){return d.id;}).join(", ")+'</div>' : '')+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<style>@media(max-width:900px){.val-grid{grid-template-columns:1fr !important;}}</style>';
+}
+function runValidationCheck(){
+  const result = computeValidation(S.fields);
+  const dupes = RECORDS.filter(function(r){
+    return r.surveyNumber===S.fields.surveyNumber && r.village===S.fields.village && (!result.matchRecord || r.id!==result.matchRecord.id);
+  });
+  showToast("Running validation checks…","info");
+  setTimeout(function(){
+    S.validation = result; S.dupes = dupes;
+    logAudit("Ran Validation", "Validation completed for "+currentFileName()+" — "+result.overall+"% confidence");
+    goTo("validation-result");
+  }, 900);
+}
+window.runValidationCheck = runValidationCheck;
+
+/* =======================================================================
+   VALIDATION RESULT PAGE
+======================================================================= */
+function renderValidationResult(){
+  const v = S.validation || computeValidation(S.fields);
+  const dupes = S.dupes || [];
+  const success = v.status==="Verified" && v.issues.length===0;
+  return '<div class="section-head"><div><p class="eyebrow">Digitization Workflow · Step 4</p><h1 class="page-title">Validation Result</h1><p class="page-sub">Final review before the record is stored in the registry.</p></div></div>'+
+  '<div style="display:grid;grid-template-columns:1fr 2fr;gap:16px;" class="vr-grid">'+
+    '<div class="card" style="padding:26px;text-align:center;">'+
+      '<div style="width:112px;height:112px;border-radius:50%;border:8px solid '+(success?'var(--emerald-50)':'var(--orange-50)')+';color:'+(success?'#059669':'#ea580c')+';display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto;">'+v.overall+'%</div>'+
+      '<p style="font-weight:800;font-size:15px;margin:16px 0 4px;">'+(success?"Validation Successful":"Manual Verification Required")+'</p>'+
+      '<p class="small muted" style="margin:0 0 14px;">'+(success?"All fields matched the registry with high confidence.":(v.matchRecord?"One or more fields need human review before approval.":"No existing registry match was found — review before filing as a new record."))+'</p>'+
+      statusBadge(v.status)+
+      '<div style="text-align:left;margin-top:20px;">'+
+        Object.keys(FIELD_LABELS).map(function(key){
+          const row = v.rows.find(function(r){return r.key===key;});
+          const ic = row.status==="match" ? icon("checkcircle") : row.status==="mismatch" ? icon("xcircle") : row.status==="missing" ? icon("alerttriangle") : icon("info");
+          return '<div class="flex items-center justify-between small" style="margin-bottom:8px;"><span class="muted">'+FIELD_LABELS[key]+'</span>'+ic+'</div>';
+        }).join('')+
+      '</div>'+
+    '</div>'+
+    '<div class="card" style="padding:26px;">'+
+      '<p style="font-weight:700;font-size:14px;margin:0 0 14px;">Detected Issues</p>'+
+      (v.issues.length===0 && dupes.length===0 ?
+        '<div class="flex items-center gap-2" style="border:1px solid var(--emerald-200);background:var(--emerald-50);color:#047857;border-radius:8px;padding:14px;font-size:13.5px;">'+icon("checkcircle","icon-lg")+' No issues found. This record is ready to be approved and stored.</div>' :
+        v.issues.map(function(iss){
+          return '<div class="flex gap-2" style="border:1px solid var(--orange-200);background:var(--orange-50);border-radius:8px;padding:13px;margin-bottom:10px;">'+icon("alerttriangle")+
+          '<div><p style="margin:0;font-weight:700;font-size:13px;color:#9a3412;">'+iss.type+' — '+iss.field+'</p><p class="small" style="margin:0;color:#c2410c;">'+iss.detail+'</p></div></div>';
+        }).join('') +
+        dupes.map(function(d){
+          return '<div class="flex gap-2" style="border:1px solid var(--red-200);background:var(--red-50);border-radius:8px;padding:13px;margin-bottom:10px;">'+icon("copy")+
+          '<div><p style="margin:0;font-weight:700;font-size:13px;color:#991b1b;">Duplicate Record — '+d.id+'</p><p class="small" style="margin:0;color:#b91c1c;">Same survey number &amp; village already registered to '+esc(d.ownerName)+'.</p></div></div>';
+        }).join('')
+      )+
+      '<div class="card" style="background:var(--slate-50);padding:16px;margin-top:16px;">'+
+        '<p class="small" style="text-transform:uppercase;letter-spacing:.05em;font-weight:700;color:var(--slate-400);margin:0 0 10px;">Record Summary</p>'+
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" class="summary-grid">'+
+          [["Owner",S.fields.ownerName],["Survey No.",S.fields.surveyNumber],["Land Area",S.fields.landArea],["Village",S.fields.village],["District",S.fields.district],["State",S.fields.state],["Land Type",S.fields.landType]].map(function(x){
+            return '<div><p class="small muted" style="margin:0;">'+x[0]+'</p><p style="font-weight:700;font-size:12.5px;margin:0;">'+esc(x[1]||"—")+'</p></div>';
+          }).join('')+
+        '</div>'+
+      '</div>'+
+      '<div class="flex gap-2" style="border-top:1px solid var(--slate-100);padding-top:18px;margin-top:18px;flex-wrap:wrap;">'+
+        '<button class="btn btn-primary" onclick="approveRecord()">'+icon("checkcircle")+' Approve &amp; Store Record</button>'+
+        '<button class="btn btn-secondary" onclick="manualVerifyRecord()">'+icon("alerttriangle")+' Send for Manual Verification</button>'+
+        '<button class="btn btn-danger-text" onclick="openRejectModal()">'+icon("xcircle")+' Reject</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<style>@media(max-width:900px){.vr-grid{grid-template-columns:1fr !important;} .summary-grid{grid-template-columns:repeat(2,1fr) !important;}}</style>';
+}
+function approveRecord(){
+  const id = nextRecordId();
+  const newRecord = Object.assign({id:id}, S.fields, {status:"Verified", confidence:(S.validation?S.validation.overall:98), uploadedDate:new Date().toISOString().slice(0,10)});
+  RECORDS.unshift(newRecord);
+  logAudit("Approved Record", id+" approved and stored ("+newRecord.confidence+"% confidence)");
+  showToast(id+" approved and stored in the registry.","success");
+  goTo("records");
+}
+function manualVerifyRecord(){
+  const id = nextRecordId();
+  const issueDetail = (S.validation && S.validation.issues[0]) ? S.validation.issues[0].detail : "Flagged for manual verification";
+  const newRecord = Object.assign({id:id}, S.fields, {status:"Manual Verification", confidence:(S.validation?S.validation.overall:87), uploadedDate:new Date().toISOString().slice(0,10), issue:issueDetail});
+  RECORDS.unshift(newRecord);
+  logAudit("Manual Verification", id+" sent for manual verification");
+  showToast(id+" sent for manual verification.","warning");
+  goTo("errors");
+}
+function openRejectModal(){ S.modal={type:"confirmReject"}; render(); }
+function confirmReject(){
+  logAudit("Rejected Document", currentFileName()+" rejected during validation review");
+  showToast("Document rejected. It was not added to the registry.","error");
+  S.modal=null;
+  goTo("upload");
+}
+window.approveRecord=approveRecord; window.manualVerifyRecord=manualVerifyRecord; window.openRejectModal=openRejectModal; window.confirmReject=confirmReject;
+
+/* =======================================================================
+   LAND RECORDS PAGE
+======================================================================= */
+function renderRecords(){
+  const f = S.recordsFilter;
+  const filtered = RECORDS.filter(function(r){
+    const matchQ = !f.q || (r.ownerName+" "+r.surveyNumber+" "+r.village+" "+r.id+" "+r.documentNumber).toLowerCase().includes(f.q.toLowerCase());
+    const matchS = f.status==="All" || r.status===f.status;
+    const matchD = f.district==="All" || r.district===f.district;
+    return matchQ && matchS && matchD;
+  });
+  return '<div class="section-head"><div><p class="eyebrow">Records</p><h1 class="page-title">Land Records</h1><p class="page-sub">'+RECORDS.length+' digitized records in the registry.</p></div></div>'+
+  '<div class="card flex items-center gap-3" style="padding:14px;margin-bottom:16px;flex-wrap:wrap;">'+
+    '<div class="search-box" style="display:flex;width:260px;flex:1;min-width:200px;">'+icon("search")+'<input type="text" id="recSearch" value="'+esc(f.q)+'" oninput="setRecFilter(\'q\',this.value)" placeholder="Search by owner, survey no., village…"/></div>'+
+    '<select class="field" style="width:auto;" onchange="setRecFilter(\'status\',this.value)">'+
+      ["All","Verified","Pending","Manual Verification","Error"].map(function(s){return '<option '+(f.status===s?'selected':'')+'>'+s+'</option>';}).join('')+
+    '</select>'+
+    '<select class="field" style="width:auto;" onchange="setRecFilter(\'district\',this.value)">'+
+      '<option '+(f.district==="All"?'selected':'')+'>All</option>'+
+      DISTRICTS.map(function(d){return '<option '+(f.district===d?'selected':'')+'>'+d+'</option>';}).join('')+
+    '</select>'+
+  '</div>'+
+  '<div class="card"><div class="table-wrap"><table><thead><tr><th>Record ID</th><th>Owner</th><th>Survey No.</th><th>Village / District</th><th>Land Area</th><th>Confidence</th><th>Status</th><th></th></tr></thead><tbody>'+
+    (filtered.length ? filtered.map(function(r){
+      return '<tr class="rowlink" onclick="goTo(\'record-details\',\''+r.id+'\')"><td style="font-weight:700;color:var(--blue-700);">'+r.id+'</td><td>'+esc(r.ownerName)+'</td><td>'+esc(r.surveyNumber)+'</td>'+
+      '<td>'+esc(r.village)+', '+esc(r.district)+'</td><td>'+esc(r.landArea)+'</td><td>'+confBar(r.confidence)+'</td><td>'+statusBadge(r.status)+'</td><td>'+icon("eye","icon")+'</td></tr>';
+    }).join('') : '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--slate-400);">No records match your filters.</td></tr>')+
+  '</tbody></table></div></div>';
+}
+function setRecFilter(key,val){ S.recordsFilter[key]=val; render(); }
+window.setRecFilter = setRecFilter;
+
+/* =======================================================================
+   RECORD DETAILS PAGE
+======================================================================= */
+function renderRecordDetails(){
+  const record = RECORDS.find(function(r){return r.id===S.selectedRecordId;});
+  if(!record){
+    return '<div class="card" style="padding:40px;text-align:center;"><p class="muted">Record not found.</p><button class="btn btn-secondary" style="margin-top:14px;" onclick="goTo(\'records\')">'+icon("arrowleft")+' Back to Land Records</button></div>';
+  }
+  if(!S.recordDraft || S.recordDraft.id!==record.id) S.recordDraft = Object.assign({}, record);
+  const history = AUDIT.filter(function(a){ return a.details.indexOf(record.id)!==-1; });
+  return '<button class="flex items-center gap-1 small muted" style="background:none;border:none;margin-bottom:14px;padding:0;" onclick="goTo(\'records\')">'+icon("arrowleft")+' Back to Land Records</button>'+
+  '<div class="section-head"><div><p class="eyebrow">'+record.id+'</p><h1 class="page-title">'+esc(record.ownerName)+'</h1><p class="page-sub">'+esc(record.village)+', '+esc(record.mandal)+', '+esc(record.district)+'</p></div>'+
+    '<div class="flex gap-2">'+
+      (!S.editingRecord ? '<button class="btn btn-secondary" onclick="toggleEditRecord(true)">'+icon("edit")+' Edit Record</button>' :
+        '<button class="btn btn-secondary" onclick="toggleEditRecord(false)">Cancel</button><button class="btn btn-primary" onclick="saveRecordChanges()">'+icon("check")+' Save Changes</button>')+
+      '<button class="btn btn-secondary" onclick="showToast(\'Export started (mock).\',\'info\')">'+icon("download")+' Export</button>'+
+    '</div>'+
+  '</div>'+
+  '<div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;" class="rd-grid">'+
+    '<div class="card" style="padding:22px;">'+
+      '<div class="flex items-center justify-between" style="margin-bottom:16px;"><p style="font-weight:700;font-size:14px;margin:0;">Record Details</p>'+statusBadge(record.status)+'</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="field-grid">'+
+        Object.keys(FIELD_LABELS).map(function(key){
+          return '<div><label class="field-label">'+icon(FIELD_ICONS[key])+FIELD_LABELS[key]+'</label>'+
+          (S.editingRecord ? '<input type="text" value="'+esc(S.recordDraft[key])+'" oninput="setRecordDraft(\''+key+'\',this.value)"/>' :
+            '<div style="background:var(--slate-50);border-radius:8px;padding:9px 12px;font-size:13.5px;">'+esc(record[key])+'</div>')+
+          '</div>';
+        }).join('')+
+      '</div>'+
+      (record.issue ? '<div class="flex gap-2" style="border:1px solid var(--orange-200);background:var(--orange-50);color:#c2410c;border-radius:8px;padding:12px;margin-top:16px;font-size:13px;">'+icon("alerttriangle")+esc(record.issue)+'</div>' : '')+
+    '</div>'+
+    '<div>'+
+      '<div class="card" style="padding:18px;margin-bottom:16px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 12px;">Confidence &amp; Metadata</p>'+
+        '<div class="flex items-center justify-between small" style="margin-bottom:6px;"><span class="muted">Overall confidence</span><span style="font-weight:700;">'+record.confidence+'%</span></div>'+
+        confBar(record.confidence,false)+
+        '<div class="flex items-center justify-between small" style="border-top:1px solid var(--slate-100);margin-top:12px;padding-top:12px;"><span class="muted">Uploaded</span><span style="font-weight:700;">'+record.uploadedDate+'</span></div>'+
+        '<div class="flex items-center justify-between small" style="margin-top:8px;"><span class="muted">Document No.</span><span style="font-weight:700;">'+esc(record.documentNumber)+'</span></div>'+
+      '</div>'+
+      '<div class="card" style="padding:18px;"><p style="font-weight:700;font-size:13.5px;margin:0 0 12px;">Activity Timeline</p>'+
+      (history.length===0 ? '<p class="small muted">No logged activity references this record yet.</p>' :
+        history.map(function(h,i){
+          return '<div class="flex gap-3" style="margin-bottom:12px;"><div style="display:flex;flex-direction:column;align-items:center;"><div style="width:8px;height:8px;border-radius:50%;background:var(--blue-600);"></div>'+(i<history.length-1?'<div style="width:2px;flex:1;background:var(--slate-100);min-height:20px;"></div>':'')+'</div>'+
+          '<div><p style="margin:0;font-weight:700;font-size:12.5px;">'+h.action+'</p><p class="small muted" style="margin:0;">'+h.timestamp+' · '+h.user+'</p></div></div>';
+        }).join(''))+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<style>@media(max-width:900px){.rd-grid,.field-grid{grid-template-columns:1fr !important;}}</style>';
+}
+function toggleEditRecord(v){ S.editingRecord=v; if(v){ const rec=RECORDS.find(function(r){return r.id===S.selectedRecordId;}); S.recordDraft=Object.assign({},rec);} render(); }
+function setRecordDraft(key,val){ S.recordDraft[key]=val; render(); }
+function saveRecordChanges(){
+  const idx = RECORDS.findIndex(function(r){return r.id===S.selectedRecordId;});
+  if(idx>-1){ RECORDS[idx] = Object.assign({}, RECORDS[idx], S.recordDraft); logAudit("Edited Record", RECORDS[idx].id+" fields manually corrected"); showToast(RECORDS[idx].id+" updated successfully.","success"); }
+  S.editingRecord=false; render();
+}
+window.toggleEditRecord=toggleEditRecord; window.setRecordDraft=setRecordDraft; window.saveRecordChanges=saveRecordChanges;
+
+/* =======================================================================
+   ERRORS & DUPLICATES PAGE
+======================================================================= */
+function renderErrors(){
+  const flagged = RECORDS.filter(function(r){ return r.status==="Error" || r.status==="Manual Verification" || r.duplicateOf; });
+  return '<div class="section-head"><div><p class="eyebrow">Records</p><h1 class="page-title">Errors &amp; Duplicates</h1><p class="page-sub">'+flagged.length+' records currently flagged for review.</p></div></div>'+
+  '<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">'+
+    '<div class="card stat-card"><p class="stat-value" style="color:#dc2626;">'+RECORDS.filter(function(r){return r.status==="Error";}).length+'</p><p class="small muted">Processing errors</p></div>'+
+    '<div class="card stat-card"><p class="stat-value" style="color:#ea580c;">'+RECORDS.filter(function(r){return r.status==="Manual Verification";}).length+'</p><p class="small muted">Manual verification</p></div>'+
+    '<div class="card stat-card"><p class="stat-value" style="color:var(--blue-700);">'+RECORDS.filter(function(r){return r.duplicateOf;}).length+'</p><p class="small muted">Detected duplicates</p></div>'+
+  '</div>'+
+  '<div class="card" style="margin-top:16px;"><div class="table-wrap"><table><thead><tr><th>Record ID</th><th>Owner</th><th>Reason</th><th>Status</th><th></th></tr></thead><tbody>'+
+    (flagged.length ? flagged.map(function(r){
+      return '<tr><td style="font-weight:700;color:var(--blue-700);">'+r.id+'</td><td>'+esc(r.ownerName)+'</td><td class="muted">'+esc(r.issue||"Flagged for review")+'</td><td>'+statusBadge(r.status)+'</td>'+
+      '<td><button style="background:none;border:none;color:var(--blue-700);font-weight:700;font-size:12.5px;" onclick="goTo(\'record-details\',\''+r.id+'\')">Review</button></td></tr>';
+    }).join('') : '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--slate-400);">No flagged records. The queue is clean.</td></tr>')+
+  '</tbody></table></div></div>'+
+  '<style>@media(max-width:700px){.stat-grid{grid-template-columns:1fr !important;}}</style>';
+}
+
+/* =======================================================================
+   REPORTS PAGE
+======================================================================= */
+function renderReports(){
+  const avgConfidence = Math.round(RECORDS.reduce(function(a,r){return a+r.confidence;},0)/RECORDS.length);
+  return '<div class="section-head"><div><p class="eyebrow">Records</p><h1 class="page-title">Reports</h1><p class="page-sub">Aggregate insights across the digitization pipeline.</p></div>'+
+    '<button class="btn btn-secondary" onclick="showToast(\'Report exported as CSV (mock).\',\'info\')">'+icon("download")+' Export Report</button></div>'+
+  '<div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">'+
+    '<div class="card stat-card"><p class="stat-value">'+RECORDS.length+'</p><p class="small muted">Total digitized records</p></div>'+
+    '<div class="card stat-card"><p class="stat-value">'+avgConfidence+'%</p><p class="small muted">Average field confidence</p></div>'+
+    '<div class="card stat-card"><p class="stat-value">'+RECORDS.filter(function(r){return r.status==="Verified";}).length+'</p><p class="small muted">Fully verified records</p></div>'+
+  '</div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;" class="rep-grid">'+
+    '<div class="card" style="padding:20px;"><p style="font-weight:700;font-size:14px;margin:0 0 14px;">Records by District</p><div style="height:230px;"><canvas id="repDistrict"></canvas></div></div>'+
+    '<div class="card" style="padding:20px;"><p style="font-weight:700;font-size:14px;margin:0 0 14px;">Status Distribution</p><div style="height:230px;"><canvas id="repStatus"></canvas></div></div>'+
+  '</div>'+
+  '<div class="card" style="padding:20px;margin-top:16px;"><p style="font-weight:700;font-size:14px;margin:0 0 14px;">Uploads vs. Errors Trend</p><div style="height:260px;"><canvas id="repTrend"></canvas></div></div>'+
+  '<style>@media(max-width:900px){.rep-grid{grid-template-columns:1fr !important;}}</style>';
+}
+function buildReportsCharts(){
+  ["repDistrict","repStatus","repTrend"].forEach(function(id){ if(CHARTS[id]){CHARTS[id].destroy(); delete CHARTS[id];} });
+  const distEl=document.getElementById("repDistrict");
+  if(distEl){
+    CHARTS.repDistrict = new Chart(distEl, { type:"bar",
+      data:{ labels:DISTRICTS.map(function(d){return d.replace(" Godavari"," Godav.");}), datasets:[{ data:DISTRICTS.map(function(d){return RECORDS.filter(function(r){return r.district===d;}).length;}), backgroundColor:"#1d4ed8", borderRadius:4, maxBarThickness:36 }] },
+      options:{ plugins:{legend:{display:false}}, scales:{ y:{grid:{color:"#f1f5f9"},ticks:{precision:0}}, x:{grid:{display:false}} }, maintainAspectRatio:false }
+    });
+  }
+  const statEl=document.getElementById("repStatus");
+  if(statEl){
+    const s=["Verified","Pending","Manual Verification","Error"].map(function(st){return RECORDS.filter(function(r){return r.status===st;}).length;});
+    CHARTS.repStatus = new Chart(statEl, { type:"pie",
+      data:{ labels:["Verified","Pending","Manual Verification","Error"], datasets:[{ data:s, backgroundColor:["#059669","#d97706","#ea580c","#dc2626"], borderWidth:0 }] },
+      options:{ plugins:{legend:{position:"bottom", labels:{boxWidth:10,font:{size:11}}}}, maintainAspectRatio:false }
+    });
+  }
+  const trendEl=document.getElementById("repTrend");
+  if(trendEl){
+    CHARTS.repTrend = new Chart(trendEl, { type:"bar",
+      data:{ labels:["Jan","Feb","Mar","Apr","May"], datasets:[
+        {label:"Uploads", data:[62,74,88,95,112], backgroundColor:"#2563eb", borderRadius:4},
+        {label:"Errors", data:[6,5,9,4,7], backgroundColor:"#dc2626", borderRadius:4}
+      ]},
+      options:{ plugins:{legend:{position:"bottom", labels:{boxWidth:10,font:{size:11}}}}, scales:{ y:{grid:{color:"#f1f5f9"}}, x:{grid:{display:false}} }, maintainAspectRatio:false }
+    });
+  }
+}
+
+/* =======================================================================
+   USERS PAGE
+======================================================================= */
+function renderUsers(){
+  if(S.auth.role!=="Admin"){
+    return '<div class="card" style="padding:44px;text-align:center;">'+icon("shield","icon-xl")+'<p style="font-weight:700;margin:14px 0 4px;">Access Restricted</p><p class="small muted">Only administrators can manage users.</p></div>';
+  }
+  return '<div class="section-head"><div><p class="eyebrow">Administration</p><h1 class="page-title">Users</h1><p class="page-sub">Manage portal access for officers and verifiers.</p></div>'+
+    '<button class="btn btn-primary" onclick="openAddUser()">'+icon("plus")+' Add User</button></div>'+
+  '<div class="card"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last Login</th><th>Status</th><th></th></tr></thead><tbody>'+
+    USERS.map(function(u){
+      return '<tr><td style="font-weight:700;">'+esc(u.name)+'</td><td class="muted">'+esc(u.email)+'</td>'+
+      '<td><span class="badge" style="background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-700);">'+u.role+'</span></td>'+
+      '<td class="muted">'+u.lastLogin+'</td>'+
+      '<td><span class="flex items-center gap-1 small" style="color:'+(u.status==="Active"?"#059669":"var(--slate-400)")+';font-weight:600;"><span class="dot" style="background:'+(u.status==="Active"?"#10b981":"var(--slate-300)")+'"></span>'+u.status+'</span></td>'+
+      '<td><button style="background:none;border:none;color:var(--blue-700);font-weight:700;font-size:12px;" onclick="toggleUserStatus(\''+u.id+'\')">'+(u.status==="Active"?"Deactivate":"Activate")+'</button></td></tr>';
+    }).join('')+
+  '</tbody></table></div></div>'+
+  (S.modal && S.modal.type==="addUser" ? renderAddUserModal() : '');
+}
+function openAddUser(){ S.userForm={name:"",email:"",role:"Land Officer"}; S.modal={type:"addUser"}; render(); }
+function closeModal(){ S.modal=null; render(); }
+function setUserForm(key,val){ S.userForm[key]=val; render(); }
+function submitAddUser(){
+  if(!S.userForm.name || !S.userForm.email){ showToast("Please fill in name and email.","error"); return; }
+  const id="U"+(USERS.length+1);
+  USERS.push({id:id, name:S.userForm.name, email:S.userForm.email, role:S.userForm.role, status:"Active", lastLogin:"—"});
+  logAudit("User Added", S.userForm.name+" added as "+S.userForm.role);
+  showToast(S.userForm.name+" added as "+S.userForm.role+".","success");
+  S.modal=null; render();
+}
+function toggleUserStatus(id){
+  const u = USERS.find(function(x){return x.id===id;});
+  if(u) u.status = u.status==="Active" ? "Inactive" : "Active";
+  render();
+}
+window.openAddUser=openAddUser; window.closeModal=closeModal; window.setUserForm=setUserForm; window.submitAddUser=submitAddUser; window.toggleUserStatus=toggleUserStatus;
+
+function renderAddUserModal(){
+  const f = S.userForm;
+  return '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal-box">'+
+    '<div class="modal-head"><p style="font-weight:800;font-size:15px;margin:0;">New User</p><button style="background:none;border:none;color:var(--slate-400);" onclick="closeModal()">'+icon("x")+'</button></div>'+
+    '<div class="modal-body">'+
+      '<label class="field-label">Full name</label><input type="text" value="'+esc(f.name)+'" oninput="setUserForm(\'name\',this.value)" style="margin-bottom:12px;" placeholder="e.g. R. Kavitha"/>'+
+      '<label class="field-label">Email address</label><input type="text" value="'+esc(f.email)+'" oninput="setUserForm(\'email\',this.value)" style="margin-bottom:12px;" placeholder="name@landrecords.gov.in"/>'+
+      '<label class="field-label">Role</label><select class="field" onchange="setUserForm(\'role\',this.value)">'+
+        ["Land Officer","Verifier","Admin"].map(function(r){return '<option '+(f.role===r?'selected':'')+'>'+r+'</option>';}).join('')+
+      '</select>'+
+    '</div>'+
+    '<div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="submitAddUser()">'+icon("check")+' Save User</button></div>'+
+  '</div></div>';
+}
+
+/* =======================================================================
+   AUDIT LOGS PAGE
+======================================================================= */
+function renderAudit(){
+  const q = S.auditQuery;
+  const filtered = AUDIT.filter(function(a){ return !q || (a.user+a.action+a.details).toLowerCase().includes(q.toLowerCase()); });
+  return '<div class="section-head"><div><p class="eyebrow">Administration</p><h1 class="page-title">Audit Logs</h1><p class="page-sub">Chronological record of all portal activity.</p></div></div>'+
+  '<div class="card" style="padding:14px;margin-bottom:16px;"><div class="search-box" style="display:flex;width:100%;">'+icon("search")+'<input type="text" value="'+esc(q)+'" oninput="setAuditQuery(this.value)" placeholder="Search by user, action, or record…"/></div></div>'+
+  '<div class="card">'+
+    (filtered.length ? filtered.map(function(a){
+      return '<div class="flex gap-3" style="padding:16px 18px;border-bottom:1px solid var(--slate-100);">'+
+      '<div style="width:34px;height:34px;border-radius:50%;background:var(--blue-50);color:var(--blue-700);display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+icon("scroll")+'</div>'+
+      '<div style="flex:1;min-width:0;"><div class="flex items-center justify-between" style="flex-wrap:wrap;gap:6px;"><p style="margin:0;font-weight:700;font-size:13px;">'+a.action+'</p><p class="small muted" style="margin:0;">'+a.timestamp+'</p></div>'+
+      '<p class="small muted" style="margin:2px 0 0;">'+esc(a.details)+'</p><p class="small" style="margin:3px 0 0;font-weight:700;color:var(--blue-600);">'+esc(a.user)+'</p></div></div>';
+    }).join('') : '<p class="muted" style="text-align:center;padding:40px;">No matching activity.</p>')+
+  '</div>';
+}
+function setAuditQuery(v){ S.auditQuery=v; render(); }
+window.setAuditQuery = setAuditQuery;
+
+/* =======================================================================
+   SETTINGS PAGE
+======================================================================= */
+function renderSettings(){
+  const u = S.auth;
+  return '<div class="section-head"><div><p class="eyebrow">Administration</p><h1 class="page-title">Settings</h1><p class="page-sub">Manage your profile, notifications, and system preferences.</p></div></div>'+
+  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="settings-grid">'+
+    '<div class="card" style="padding:24px;">'+
+      '<p style="font-weight:700;font-size:14px;margin:0 0 16px;">Profile</p>'+
+      '<div class="flex items-center gap-3"><div class="avatar" style="width:52px;height:52px;font-size:16px;">'+initials(u.name)+'</div>'+
+      '<div><p style="font-weight:800;font-size:14px;margin:0;">'+esc(u.name)+'</p><p class="small muted" style="margin:0;">'+esc(u.email)+'</p>'+
+      '<span class="badge" style="background:var(--blue-50);border-color:var(--blue-100);color:var(--blue-700);margin-top:4px;">'+u.role+'</span></div></div>'+
+      '<p style="font-weight:700;font-size:14px;margin:22px 0 12px;">Notification Preferences</p>'+
+      [["email","Email me when a record needs manual verification"],["sms","SMS alerts for critical validation errors"],["weeklyReport","Weekly digitization summary report"]].map(function(n){
+        return '<label class="checkline" style="margin-bottom:8px;">'+n[1]+'<input type="checkbox" '+(S.notify[n[0]]?'checked':'')+' onchange="toggleNotify(\''+n[0]+'\')" style="accent-color:#1d4ed8;width:16px;height:16px;"/></label>';
+      }).join('')+
+    '</div>'+
+    '<div>'+
+      '<div class="card" style="padding:24px;margin-bottom:16px;">'+
+        '<p style="font-weight:700;font-size:14px;margin:0 0 4px;">Validation Threshold</p><p class="small muted" style="margin:0 0 14px;">Minimum match confidence required for automatic approval.</p>'+
+        '<input type="range" min="60" max="100" value="'+S.threshold+'" oninput="setThreshold(this.value)" style="width:100%;accent-color:#1d4ed8;"/>'+
+        '<div class="flex items-center justify-between small muted" style="margin-top:6px;"><span>60%</span><span style="font-weight:800;font-size:14px;color:var(--blue-700);">'+S.threshold+'%</span><span>100%</span></div>'+
+        '<button class="btn btn-secondary" style="margin-top:14px;" onclick="showToast(\'Validation threshold set to '+S.threshold+'%.\',\'success\')">'+icon("check")+' Save Threshold</button>'+
+      '</div>'+
+      '<div class="card" style="padding:24px;">'+
+        '<p class="flex items-center gap-2" style="font-weight:700;font-size:14px;margin:0 0 16px;">'+icon("key")+' Change Password</p>'+
+        '<form onsubmit="submitPasswordChange(event)">'+
+          '<input type="password" id="pwCurrent" placeholder="Current password" style="margin-bottom:10px;"/>'+
+          '<input type="password" id="pwNext" placeholder="New password" style="margin-bottom:10px;"/>'+
+          '<input type="password" id="pwConfirm" placeholder="Confirm new password" style="margin-bottom:14px;"/>'+
+          '<button type="submit" class="btn btn-primary btn-block">Update Password</button>'+
+        '</form>'+
+      '</div>'+
+    '</div>'+
+  '</div>'+
+  '<style>@media(max-width:900px){.settings-grid{grid-template-columns:1fr !important;}}</style>';
+}
+function toggleNotify(key){ S.notify[key]=!S.notify[key]; render(); }
+function setThreshold(v){ S.threshold=parseInt(v,10); render(); }
+function submitPasswordChange(e){
+  e.preventDefault();
+  const cur=document.getElementById("pwCurrent").value, next=document.getElementById("pwNext").value, conf=document.getElementById("pwConfirm").value;
+  if(!cur || !next || next!==conf){ showToast("Please check the password fields and try again.","error"); return; }
+  showToast("Password updated successfully.","success");
+  render();
+}
+window.toggleNotify=toggleNotify; window.setThreshold=setThreshold; window.submitPasswordChange=submitPasswordChange;
+
+/* =======================================================================
+   MODALS / TOASTS
+======================================================================= */
+function renderRejectModal(){
+  return '<div class="modal-overlay" onclick="if(event.target===this)closeModal()"><div class="modal-box">'+
+    '<div class="modal-head"><p style="font-weight:800;font-size:15px;margin:0;">Reject this document?</p><button style="background:none;border:none;color:var(--slate-400);" onclick="closeModal()">'+icon("x")+'</button></div>'+
+    '<div class="modal-body"><p class="small" style="color:var(--slate-600);line-height:1.6;margin:0;">This document will not be added to the registry, and you will need to re-upload it from scratch. This action cannot be undone.</p></div>'+
+    '<div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal()">Cancel</button><button class="btn btn-primary" style="background:#dc2626;" onclick="confirmReject()">'+icon("xcircle")+' Reject Document</button></div>'+
+  '</div></div>';
+}
+function renderToasts(){
+  if(!S.toasts.length) return '';
+  return '<div class="toast-wrap">'+S.toasts.map(function(t){
+    const iconName = t.tone==="success"?"checkcircle":t.tone==="warning"?"alerttriangle":t.tone==="error"?"xcircle":"info";
+    return '<div class="toast toast-'+t.tone+'">'+icon(iconName)+esc(t.message)+'</div>';
+  }).join('')+'</div>';
+}
+
+/* =======================================================================
+   MAIN RENDER
+======================================================================= */
+function pageContent(){
+  switch(S.page){
+    case "upload": return renderUpload();
+    case "ocr": return renderOcr();
+    case "validation": return renderValidation();
+    case "validation-result": return renderValidationResult();
+    case "records": return renderRecords();
+    case "record-details": return renderRecordDetails();
+    case "errors": return renderErrors();
+    case "reports": return renderReports();
+    case "users": return renderUsers();
+    case "audit": return renderAudit();
+    case "settings": return renderSettings();
+    default: return renderDashboard();
+  }
+}
+function render(){
+  const active = document.activeElement;
+  const activeId = active && active.id;
+  const selStart = (active && typeof active.selectionStart==="number") ? active.selectionStart : null;
+  const selEnd = (active && typeof active.selectionEnd==="number") ? active.selectionEnd : null;
+
+  const app = document.getElementById("app");
+  if(!S.auth){
+    app.innerHTML = (S.page==="login" ? renderLogin() : renderLanding()) + renderToasts();
+  } else {
+    app.innerHTML = '<div class="shell">'+renderSidebar()+
+      '<div class="main-col">'+renderTopbar()+'<main class="main-content fade-in">'+pageContent()+
+      (S.modal && S.modal.type==="confirmReject" ? renderRejectModal() : '')+
+      '</main></div></div>'+renderToasts();
+    if(S.page==="dashboard") buildDashboardCharts();
+    if(S.page==="reports") buildReportsCharts();
+  }
+
+  if(activeId){
+    const el = document.getElementById(activeId);
+    if(el){
+      el.focus();
+      if(selStart!==null && el.setSelectionRange){
+        try{ el.setSelectionRange(selStart, selEnd); }catch(e){}
+      }
+    }
+  }
+}
+
+render();
+</script>
+</body>
+</html>
